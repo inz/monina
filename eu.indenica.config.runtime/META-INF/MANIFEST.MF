@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: eu.indenica.config.runtime
-Bundle-Vendor: My Company
+Bundle-Vendor: TUV
 Bundle-Version: 1.0.0.qualifier
 Bundle-SymbolicName: eu.indenica.config.runtime; singleton:=true
 Bundle-ActivationPolicy: lazy
@@ -11,6 +11,27 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.apache.commons.logging;bundle-version="1.0.4";resolution:=optional,
  org.eclipse.emf.codegen.ecore;resolution:=optional,
  org.eclipse.emf.mwe.utils;resolution:=optional,
- org.eclipse.emf.mwe2.launch;resolution:=optional
-Import-Package: org.apache.log4j
+ org.eclipse.emf.mwe2.launch;resolution:=optional,
+ org.eclipse.xtext.util,
+ org.eclipse.emf.ecore,
+ org.eclipse.emf.common,
+ org.antlr.runtime,
+ org.eclipse.xtext.common.types,
+ org.eclipse.xtext.xbase.lib
+Import-Package: org.apache.log4j,
+ org.eclipse.xtext.xbase.lib
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: eu.indenica.config.runtime,
+ eu.indenica.config.runtime.services,
+ eu.indenica.config.runtime.runtime,
+ eu.indenica.config.runtime.runtime.impl,
+ eu.indenica.config.runtime.runtime.util,
+ eu.indenica.config.runtime.serializer,
+ eu.indenica.config.runtime.parser.antlr,
+ eu.indenica.config.runtime.parser.antlr.internal,
+ eu.indenica.config.runtime.validation,
+ eu.indenica.config.runtime.formatting,
+ eu.indenica.config.runtime.jvmmodel,
+ eu.indenica.config.runtime.scoping,
+ eu.indenica.config.runtime.generator
+
