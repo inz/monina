@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<plugin>
+
+    <extension
+            point="org.eclipse.ui.editors">
+        <editor
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
+            contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
+            default="true"
+            extensions="irt"
+            id="eu.indenica.config.runtime.Runtime"
+            matchingStrategy="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.xbase.ui.editor.JavaEditorInputMatcher"
+            name="Runtime Editor">
+        </editor>
+    </extension>
+    <extension
+        point="org.eclipse.ui.handlers">
+        <handler
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.hyperlinking.OpenDeclarationHandler"
+            commandId="org.eclipse.xtext.ui.editor.hyperlinking.OpenDeclaration">
+            <activeWhen>
+                <reference
+                    definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+                </reference>
+            </activeWhen>
+        </handler>
+        <handler
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.handler.ValidateActionHandler"
+            commandId="eu.indenica.config.runtime.Runtime.validate">
+         <activeWhen>
+            <reference
+                    definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+            </reference>
+         </activeWhen>
+      </handler>
+    </extension>
+    <extension point="org.eclipse.core.expressions.definitions">
+        <definition id="eu.indenica.config.runtime.Runtime.Editor.opened">
+            <and>
+                <reference definitionId="isActiveEditorAnInstanceOfXtextEditor"/>
+                <with variable="activeEditor">
+                    <test property="org.eclipse.xtext.ui.editor.XtextEditor.languageName" 
+                        value="eu.indenica.config.runtime.Runtime" 
+                        forcePluginActivation="true"/>
+                </with>        
+            </and>
+        </definition>
+    </extension>
+    <extension
+            point="org.eclipse.ui.preferencePages">
+        <page
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="eu.indenica.config.runtime.Runtime"
+            name="Runtime">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+        </page>
+        <page
+            category="eu.indenica.config.runtime.Runtime"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.syntaxcoloring.SyntaxColoringPreferencePage"
+            id="eu.indenica.config.runtime.Runtime.coloring"
+            name="Syntax Coloring">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+        </page>
+        <page
+            category="eu.indenica.config.runtime.Runtime"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.templates.XtextTemplatePreferencePage"
+            id="eu.indenica.config.runtime.Runtime.templates"
+            name="Templates">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+        </page>
+    </extension>
+    <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="eu.indenica.config.runtime.Runtime"
+            name="Runtime">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
+        </page>
+    </extension>
+    <extension
+        point="org.eclipse.ui.keywords">
+        <keyword
+            id="eu.indenica.config.runtime.ui.keyword_Runtime"
+            label="Runtime"/>
+    </extension>
+    <extension
+         point="org.eclipse.ui.commands">
+      <command
+            description="Trigger expensive validation"
+            id="eu.indenica.config.runtime.Runtime.validate"
+            name="Validate">
+      </command>
+    </extension>
+    <extension point="org.eclipse.ui.menus">
+        <menuContribution
+            locationURI="popup:#TextEditorContext?after=group.edit">
+             <command
+                 commandId="eu.indenica.config.runtime.Runtime.validate"
+                 style="push"
+                 tooltip="Trigger expensive validation">
+            <visibleWhen checkEnabled="false">
+                <reference
+                    definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+                </reference>
+            </visibleWhen>
+         </command>  
+         </menuContribution>
+    </extension>
+    <extension point="org.eclipse.ui.menus">
+		<menuContribution locationURI="popup:#TextEditorContext?endof=group.find">
+			<command commandId="org.eclipse.xtext.ui.editor.FindReferences">
+				<visibleWhen checkEnabled="false">
+                	<reference definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+                	</reference>
+            	</visibleWhen>
+			</command>
+		</menuContribution>
+	</extension>
+	<extension point="org.eclipse.ui.handlers">
+	    <handler
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.findrefs.FindReferencesHandler"
+            commandId="org.eclipse.xtext.ui.editor.FindReferences">
+            <activeWhen>
+                <reference
+                    definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+                </reference>
+            </activeWhen>
+        </handler>
+    </extension>   
+
+<!-- adding resource factories -->
+
+	<extension
+		point="org.eclipse.emf.ecore.extension_parser">
+		<parser
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.resource.IResourceFactory"
+			type="irt">
+		</parser>
+	</extension>
+	<extension point="org.eclipse.xtext.extension_resourceServiceProvider">
+        <resourceServiceProvider
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.resource.IResourceUIServiceProvider"
+            uriExtension="irt">
+        </resourceServiceProvider>
+    </extension>
+
+
+    <!-- marker definitions for eu.indenica.config.runtime.Runtime -->
+    <extension
+            id="runtime.check.fast"
+            name="Runtime Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.fast"/>
+        <persistent value="true"/>
+    </extension>
+    <extension
+            id="runtime.check.normal"
+            name="Runtime Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.normal"/>
+        <persistent value="true"/>
+    </extension>
+    <extension
+            id="runtime.check.expensive"
+            name="Runtime Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.expensive"/>
+        <persistent value="true"/>
+    </extension>
+
+   <extension
+         point="org.eclipse.xtext.builder.participant">
+      <participant
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.IXtextBuilderParticipant">
+      </participant>
+   </extension>
+   <extension
+            point="org.eclipse.ui.preferencePages">
+        <page
+            category="eu.indenica.config.runtime.Runtime"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.preferences.BuilderPreferencePage"
+            id="eu.indenica.config.runtime.Runtime.compiler.preferencePage"
+            name="Compiler">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+        </page>
+    </extension>
+    <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            category="eu.indenica.config.runtime.Runtime"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.preferences.BuilderPreferencePage"
+            id="eu.indenica.config.runtime.Runtime.compiler.propertyPage"
+            name="Compiler">
+            <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
+        </page>
+    </extension>
+
+	<!-- Quick Outline -->
+	<extension
+		point="org.eclipse.ui.handlers">
+		<handler 
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.outline.quickoutline.ShowQuickOutlineActionHandler"
+			commandId="org.eclipse.xtext.ui.editor.outline.QuickOutline">
+			<activeWhen>
+				<reference
+					definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+				</reference>
+			</activeWhen>
+		</handler>
+	</extension>
+	<extension
+		point="org.eclipse.ui.commands">
+		<command
+			description="Open the quick outline."
+			id="org.eclipse.xtext.ui.editor.outline.QuickOutline"
+			name="Quick Outline">
+		</command>
+	</extension>
+	<extension point="org.eclipse.ui.menus">
+		<menuContribution
+			locationURI="popup:#TextEditorContext?after=group.open">
+			<command commandId="org.eclipse.xtext.ui.editor.outline.QuickOutline"
+				style="push"
+				tooltip="Open Quick Outline">
+				<visibleWhen checkEnabled="false">
+					<reference definitionId="eu.indenica.config.runtime.Runtime.Editor.opened"/>
+				</visibleWhen>
+			</command>
+		</menuContribution>
+	</extension>
+    <!-- quickfix marker resolution generator for eu.indenica.config.runtime.Runtime -->
+    <extension
+            point="org.eclipse.ui.ide.markerResolution">
+        <markerResolutionGenerator
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="eu.indenica.config.runtime.ui.runtime.check.fast">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
+        <markerResolutionGenerator
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="eu.indenica.config.runtime.ui.runtime.check.normal">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
+        <markerResolutionGenerator
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="eu.indenica.config.runtime.ui.runtime.check.expensive">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
+    </extension>
+   	<!-- Rename Refactoring -->
+	<extension point="org.eclipse.ui.handlers">
+		<handler 
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler"
+			commandId="org.eclipse.xtext.ui.refactoring.RenameElement">
+			<activeWhen>
+				<reference
+					definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+				</reference>
+			</activeWhen>
+		</handler>
+	</extension>
+    <extension point="org.eclipse.ui.menus">
+         <menuContribution
+            locationURI="popup:#TextEditorContext?after=group.edit">
+         <command commandId="org.eclipse.xtext.ui.refactoring.RenameElement"
+               style="push">
+            <visibleWhen checkEnabled="false">
+               <reference
+                     definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+               </reference>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+   <extension point="org.eclipse.ui.preferencePages">
+	    <page
+	        category="eu.indenica.config.runtime.Runtime"
+	        class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.RefactoringPreferencePage"
+	        id="eu.indenica.config.runtime.Runtime.refactoring"
+	        name="Refactoring">
+	        <keywordReference id="eu.indenica.config.runtime.ui.keyword_Runtime"/>
+	    </page>
+	</extension>
+
+<!-- Type Hierarchy  -->
+	<extension
+		point="org.eclipse.ui.handlers">
+		<handler 
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.xbase.ui.hierarchy.OpenTypeHierarchyHandler"
+			commandId="org.eclipse.xtext.xbase.ui.hierarchy.OpenTypeHierarchy">
+			<activeWhen>
+				<reference
+					definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+				</reference>
+			</activeWhen>
+		</handler>
+		<handler 
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.xbase.ui.hierarchy.QuickTypeHierarchyHandler"
+			commandId="org.eclipse.xtext.xbase.ui.hierarchy.QuickTypeHierarchy">
+			<activeWhen>
+				<reference
+					definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+				</reference>
+			</activeWhen>
+		</handler>
+	</extension>
+	<extension point="org.eclipse.ui.menus">
+		<menuContribution
+			locationURI="popup:#TextEditorContext?after=group.open">
+			<command commandId="org.eclipse.xtext.xbase.ui.hierarchy.OpenTypeHierarchy"
+				style="push"
+				tooltip="Open Type Hierarchy">
+				<visibleWhen checkEnabled="false">
+					<reference definitionId="eu.indenica.config.runtime.Runtime.Editor.opened"/>
+				</visibleWhen>
+			</command>
+		</menuContribution>
+		<menuContribution
+			locationURI="popup:#TextEditorContext?after=group.open">
+			<command commandId="org.eclipse.xtext.xbase.ui.hierarchy.QuickTypeHierarchy"
+				style="push"
+				tooltip="Quick Type Hierarchy">
+				<visibleWhen checkEnabled="false">
+					<reference definitionId="eu.indenica.config.runtime.Runtime.Editor.opened"/>
+				</visibleWhen>
+			</command>
+		</menuContribution>
+	</extension>
+	<!-- Call Hierachy -->
+	<extension
+		point="org.eclipse.ui.handlers">
+		<handler 
+			class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.xbase.ui.hierarchy.OpenCallHierachyHandler"
+			commandId="org.eclipse.xtext.xbase.ui.hierarchy.OpenCallHierarchy">
+			<activeWhen>
+				<reference
+					definitionId="eu.indenica.config.runtime.Runtime.Editor.opened">
+				</reference>
+			</activeWhen>
+		</handler>
+	</extension>
+	
+	<extension point="org.eclipse.ui.menus">
+		<menuContribution
+			locationURI="popup:#TextEditorContext?after=group.open">
+			<command commandId="org.eclipse.xtext.xbase.ui.hierarchy.OpenCallHierarchy"
+				style="push"
+				tooltip="Open Call Hierarchy">
+				<visibleWhen checkEnabled="false">
+					<reference definitionId="eu.indenica.config.runtime.Runtime.Editor.opened"/>
+				</visibleWhen>
+			</command>
+		</menuContribution>
+	</extension>
+	<extension
+         point="org.eclipse.core.runtime.adapters">
+      <factory class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.smap.StratumBreakpointAdapterFactory"
+         adaptableType="org.eclipse.xtext.ui.editor.XtextEditor">
+         <adapter type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget"/>
+      </factory> 
+   </extension>
+   <extension point="org.eclipse.ui.editorActions">
+      <editorContribution targetID="eu.indenica.config.runtime.Runtime" 
+                          id="eu.indenica.config.runtime.Runtime.ide.rulerActions">
+	     <action
+	             label="Not Used"
+	             class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+	             style="push"
+	             actionID="RulerDoubleClick"
+	             id="eu.indenica.config.runtime.Runtime.doubleClickBreakpointAction"/>
+	  </editorContribution>
+   </extension>
+   <extension point="org.eclipse.ui.popupMenus">
+      <viewerContribution
+         targetID="example.rulerContextMenuId"
+         id="eu.indenica.config.runtime.Runtime.ide.RulerPopupActions">
+         <action
+            label="Toggle Breakpoint"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+            menubarPath="additions"
+            id="eu.indenica.config.runtime.Runtime.ide.rulerContextMenu.toggleBreakpointAction">
+         </action>
+      </viewerContribution>
+   </extension>
+
+  <extension point="org.eclipse.compare.contentViewers">
+    <viewer id="eu.indenica.config.runtime.Runtime.compare.contentViewers"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.compare.InjectableViewerCreator"
+            extensions="irt">
+    </viewer>
+  </extension>
+  <extension point="org.eclipse.compare.contentMergeViewers">
+    <viewer id="eu.indenica.config.runtime.Runtime.compare.contentMergeViewers"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.compare.InjectableViewerCreator"
+            extensions="irt" label="Runtime Compare">
+     </viewer>
+  </extension>
+  <extension point="org.eclipse.ui.editors.documentProviders">
+    <provider id="eu.indenica.config.runtime.Runtime.editors.documentProviders"
+            class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.model.XtextDocumentProvider"
+            extensions="irt">
+    </provider>
+  </extension>
+
+</plugin>
