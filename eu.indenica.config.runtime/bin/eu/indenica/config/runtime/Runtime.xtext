@@ -1,9 +1,0 @@
-grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.common.Terminals
-
-generate runtime "http://www.indenica.eu/config/runtime/Runtime"
-
-Model:
-	greetings+=Greeting*;
-	
-Greeting:
-	'Hello' name=ID '!';
