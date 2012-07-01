@@ -1,9 +1,169 @@
-grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.common.Terminals
+//grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.common.Terminals
+grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.xbase.Xbase
+
 
 generate runtime "http://www.indenica.eu/config/runtime/Runtime"
+ 
+RuntimeModel:
+ (elements += AbstractElement)*
+;
+ 
+AbstractElement:
+  Import | Event | Action | System | MonitoringRule // | AdaptationRule
+;
 
-Model:
-	greetings+=Greeting*;
-	
-Greeting:
-	'Hello' name=ID '!';
+Import:
+	'import' importedNamespace = QualifiedNameWithWildcard
+;
+
+System:
+	SystemLabel name = QualifiedName '{'
+		metadata = SystemMetadata
+		(elements += SystemElement)*
+	'}'
+;
+
+SystemElement:
+  EventRef | ActionRef
+;
+
+SystemMetadata:
+	{SystemMetadata} (('vendor' vendor = STRING)? &
+	('version' version = STRING)?)
+;
+
+Event:
+	EventLabel name = ID '{'
+		(attributes += EventAttribute)*
+	'}'
+;
+
+EventRef:
+	EventLabel name = [Event | QualifiedName]
+;
+
+Action:
+	ActionLabel name = ID '{'
+		(parameters += EventAttribute)*
+	'}'
+;
+
+ActionRef:
+	ActionLabel name = [Action | QualifiedName]
+;
+
+EventAttribute:
+	name = ID ':' type = QualifiedName
+;
+ 
+MonitoringRule:
+  MonitoringRuleLabel name = ID '{'
+	(
+		sources += EventSourceDeclaration |
+		emits += EventEmissionDeclaration
+	)*
+  	window = WindowDeclaration?
+	condition = MonitoringConditionDeclaration? 
+  '}'
+;
+
+EventEmissionDeclaration:
+	EmitLabel event = [Event | QualifiedName] '('
+		attributes += AttributeEmissionDeclaration 
+		(',' attributes += AttributeEmissionDeclaration)*
+	')'
+;
+
+AttributeEmissionDeclaration:
+	expr = ID (AsLabel attribute = [EventAttribute | QualifiedName])?
+;
+
+EventSourceDeclaration:
+	FromLabel sources += EventSource (',' sources += EventSource)* 
+;
+
+EventSource:
+	SourceLabel systems += [System | QualifiedName] (',' systems += [System | QualifiedName])*
+	EventLabel events += [Event | QualifiedName] (',' events += [Event | QualifiedName])*
+	(AsLabel sourceName = ID)? 
+;
+
+// FIXME: make proper window declaration!
+WindowDeclaration:
+	WindowLabel expression = WindowExpression
+;
+
+WindowExpression:
+	BatchWindow | TimeWindow
+;
+
+BatchWindow:
+	value=INT EventLabel?
+;
+
+TimeWindow:
+	value=INT unit=TimeUnit
+;
+
+enum TimeUnit:
+	SECONDS = 's' | SECONDS = 'sec' | SECONDS = 'second' | SECONDS = 'seconds' |
+	MINUTES = 'm' | MINUTES = 'min' | MINUTES = 'minute' | MINUTES = 'minutes' |
+	HOURS = 'h' | HOURS = 'hour' | HOURS = 'hours' |
+	DAYS = 'd' | DAYS = 'day' | DAYS = 'days' |
+	MONTHS = 'M' | MONTHS = 'month' | MONTHS = 'months' |
+	YEARS = 'y' | YEARS = 'year' | YEARS = 'years'
+;
+
+MonitoringConditionDeclaration:
+	WhereLabel expression = QualifiedName
+;
+
+//QualifiedName:
+//	ID ('.' ID)*
+//;
+
+QualifiedNameWithWildcard:
+	QualifiedName '.*'?	
+;
+
+SystemLabel:
+	'system' | 'SYSTEM'
+;
+
+MonitoringRuleLabel:
+	'monitoringrule' | 'MONITORINGRULE'
+;
+
+EmitLabel:
+	'emit' | 'EMIT'
+;
+
+FromLabel:
+	'from' | 'FROM'
+;
+
+SourceLabel:
+	'source' | 'sources' |
+	'SOURCE' | 'SOURCES'
+;
+
+ActionLabel:
+	'action' | 'ACTION'
+;
+
+EventLabel:
+	'event' | 'events' |
+	'EVENT' | 'EVENTS'
+;
+
+AsLabel:
+	'as' | 'AS'
+;
+
+WhereLabel:
+	'where' | 'WHERE'
+;
+
+WindowLabel:
+	'window' | 'WINDOW'
+;
