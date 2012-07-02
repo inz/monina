@@ -9,7 +9,7 @@ RuntimeModel:
 ;
  
 AbstractElement:
-  Import | Event | Action | System | MonitoringRule // | AdaptationRule
+  Import | Event | Action | System | MonitoringRule | FactRule // | AdaptationRule
 ;
 
 Import:
@@ -83,9 +83,15 @@ EventSourceDeclaration:
 ;
 
 EventSource:
-	SourceLabel systems += [System | QualifiedName] (',' systems += [System | QualifiedName])*
-	EventLabel events += [Event | QualifiedName] (',' events += [Event | QualifiedName])*
+	SourceLabel systems += [EventSourceType | QualifiedName] 
+		(',' systems += [EventSourceType | QualifiedName])*
+	EventLabel events += [Event | QualifiedName] 
+		(',' events += [Event | QualifiedName])*
 	(AsLabel sourceName = ID)? 
+;
+
+EventSourceType:
+	System | MonitoringRule
 ;
 
 // FIXME: make proper window declaration!
@@ -115,7 +121,147 @@ enum TimeUnit:
 ;
 
 MonitoringConditionDeclaration:
-	WhereLabel expression = QualifiedName
+	WhereLabel expression = ConditionalExpression
+;
+
+FactRule:
+	FactRuleLabel name = ID '{'
+		(
+			sources += EventSourceDeclaration |
+			assignments += AttributeAssignment
+		)*
+	'}'
+;
+
+AttributeAssignment:
+	SetLabel name=ID value=ConditionalExpression
+;
+
+/* Expression syntax adapted from 
+ * http://openjdk.java.net/projects/compiler-grammar/antlrworks/Java.g
+ * and the Xbase XExpression 	
+ */
+ConditionalExpression:
+	ConditionalOrExpression
+;
+
+ConditionalOrExpression returns ConditionalExpression:
+	ConditionalAndExpression (=>({BinaryExpression.leftOperand=current} 
+		operator=OrOperator) rightOperand=ConditionalAndExpression
+	)*
+;
+
+OrOperator:
+	{OrOperator} ('||' | 'or' | 'OR')
+;
+
+ConditionalAndExpression returns ConditionalExpression:
+	EqualityExpression (=>({BinaryExpression.leftOperand=current} 
+		operator=AndOperator) rightOperand=EqualityExpression)*
+;
+
+AndOperator:
+	{AndOperator} ('&&' | 'and' | 'AND')
+;
+
+EqualityExpression returns ConditionalExpression:
+	RelationalExpression (=>({BinaryExpression.leftOperand=current}
+		operator=EqualityOperator) rightOperand=RelationalExpression
+	)*
+;
+
+EqualityOperator:
+	{EqualityOperator} ('=' | '!=')
+;
+
+RelationalExpression returns ConditionalExpression:
+	AdditiveExpression (=>({BinaryExpression.leftOperand=current}
+		operator=CompareOperator) rightOperand=AdditiveExpression
+	)*
+;
+
+CompareOperator:
+	{CompareOperator} ('<' | '<=' | '>=' | '>')
+;
+
+AdditiveExpression returns ConditionalExpression:
+	MultiplicativeExpression (=>({BinaryExpression.leftOperand=current}
+		operator=AdditiveOperator) 
+		rightOperand=MultiplicativeExpression
+	)*
+;
+
+AdditiveOperator:
+	{AdditiveOperator} ('+' | '-')
+;
+
+MultiplicativeExpression returns ConditionalExpression:
+	UnaryExpression (=>({BinaryExpression.leftOperand=current}
+		operator=MultiplicativeOperator)
+		rightOperand=UnaryExpression
+	)*
+;
+
+MultiplicativeOperator:
+	{MultiplicativeOperator} ('*' | '/' | '%')
+;
+
+UnaryExpression returns ConditionalExpression:
+	{UnaryExpression} operator=UnaryOperatorLiteral 
+		operand=PrimaryExpression 
+	| PrimaryExpression
+;
+
+UnaryOperatorLiteral:
+	'-' | 'not' | '!'
+;
+
+UnaryOperator returns Operator:
+	operator=UnaryOperatorLiteral
+;
+
+Operator returns Operator:
+	AndOperator | OrOperator | CompareOperator | AdditiveOperator |
+	MultiplicativeOperator
+;
+
+PrimaryExpression returns ConditionalExpression:
+	ParenthesizedExpression |
+	Literal |
+	FeatureCall
+;
+
+ParenthesizedExpression returns ConditionalExpression:
+	'(' ConditionalExpression ')'
+;
+
+FeatureCall:
+	{FeatureCall} attribute=[EventAttribute | QualifiedName]
+;
+
+Literal returns ConditionalExpression:
+	BooleanLiteral |
+	NumberLiteral |
+	NullLiteral |
+	StringLiteral 
+;
+
+BooleanLiteral returns ConditionalExpression:
+	{BooleanLiteral} ('false' | isTrue ?= 'true')
+;
+
+NumberLiteral returns ConditionalExpression:
+	{NumberLiteral} value=Number	
+;
+
+
+NullLiteral returns ConditionalExpression:
+	{NullLiteral} 'null'
+;
+
+
+StringLiteral returns ConditionalExpression:
+	{StringLiteral} value=STRING
 ;
 
 //QualifiedName:
@@ -131,7 +277,8 @@ SystemLabel:
 ;
 
 MonitoringRuleLabel:
-	'monitoringrule' | 'MONITORINGRULE'
+	'monitoringrule' | 'MONITORINGRULE' | 
+	'monitor' | 'MONITOR'
 ;
 
 EmitLabel:
@@ -166,4 +313,12 @@ WhereLabel:
 
 WindowLabel:
 	'window' | 'WINDOW'
+;
+
+FactRuleLabel:
+	'factrule' | 'FACTRULE'
+;
+
+SetLabel:
+	'set' | 'SET'
 ;
