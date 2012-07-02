@@ -42,7 +42,6 @@ class RuntimeDslParserTest {
 	
 	@Test
 	def void checkSyntax() {
-		println("foo")
 		'''
 			event eventOne {
 				attr1 : String
@@ -68,16 +67,21 @@ class RuntimeDslParserTest {
 			
 			monitoringrule ruleOne {
 				emit eventThree(foo as attr3)
-				from sources sOne, sTwo event eventOne as attr1
+				from sources sOne, sTwo event eventOne as event1
 				window 10s
-				where foo
+				where -2 > eventOne.attr1
 			}
 			
 			monitoringrule ruleTwo {
 				from source sOne, sTwo events eventTwo, eventOne
 				from source sTwo event eventTwo
-				emit eventThree(foo as attrThree)
+				emit eventThree(foo as attrThree )
 				window 500
+			}
+			
+			factrule factOne {
+				from source ruleTwo event eventThree
+				set factAttr1 3
 			}
 		'''.checkModel
 	}
