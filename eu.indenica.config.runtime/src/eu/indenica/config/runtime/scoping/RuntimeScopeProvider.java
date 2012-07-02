@@ -3,12 +3,22 @@
  */
 package eu.indenica.config.runtime.scoping;
 
+import java.util.Collection;
+
+import org.eclipse.emf.ecore.EGenericType;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.scoping.Scopes;
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
 
+import com.google.common.collect.Lists;
+
+import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
+import eu.indenica.config.runtime.runtime.EventSource;
+import eu.indenica.config.runtime.runtime.EventSourceDeclaration;
+import eu.indenica.config.runtime.runtime.MonitoringRule;
 
 /**
  * This class contains custom scoping description.
@@ -20,5 +30,23 @@ import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
 public class RuntimeScopeProvider extends AbstractDeclarativeScopeProvider {
 	IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref) {
 		return Scopes.scopeFor(ctx.getEvent().getAttributes());
+	}
+
+	IScope scope_JvmIdentifiableElement(MonitoringRule ctx, EReference ref) {
+		Collection<EObject> elements = Lists.newArrayList();
+		Collection<EventSource> sources = Lists.newArrayList();
+
+		for(EventSourceDeclaration source : ctx.getSources())
+			sources.addAll(source.getSources());
+
+		for(EventSource source : sources) {
+			elements.add(source);
+			for(Event event : source.getEvents()) {
+				elements.add(event);
+				elements.addAll(event.getAttributes());
+			}
+		}
+
+		return Scopes.scopeFor(elements);
 	}
 }
