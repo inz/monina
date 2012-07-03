@@ -17,7 +17,7 @@ Import:
 ;
 
 System:
-	SystemLabel name = QualifiedName '{'
+	'system' name = QualifiedName '{'
 		metadata = SystemMetadata
 		(elements += SystemElement)*
 	'}'
@@ -33,23 +33,23 @@ SystemMetadata:
 ;
 
 Event:
-	EventLabel name = ID '{'
+	'event' name = ID '{'
 		(attributes += EventAttribute)*
 	'}'
 ;
 
 EventRef:
-	EventLabel name = [Event | QualifiedName]
+	'event' name = [Event | QualifiedName]
 ;
 
 Action:
-	ActionLabel name = ID '{'
+	'action' name = ID '{'
 		(parameters += EventAttribute)*
 	'}'
 ;
 
 ActionRef:
-	ActionLabel name = [Action | QualifiedName]
+	'action' name = [Action | QualifiedName]
 ;
 
 EventAttribute:
@@ -57,7 +57,7 @@ EventAttribute:
 ;
  
 MonitoringRule:
-  MonitoringRuleLabel name = ID '{'
+  'monitoringrule' name = ID '{'
 	(
 		sources += EventSourceDeclaration |
 		emits += EventEmissionDeclaration
@@ -68,26 +68,26 @@ MonitoringRule:
 ;
 
 EventEmissionDeclaration:
-	EmitLabel event = [Event | QualifiedName] '('
+	'emit' event = [Event | QualifiedName] '('
 		attributes += AttributeEmissionDeclaration 
 		(',' attributes += AttributeEmissionDeclaration)*
 	')'
 ;
 
 AttributeEmissionDeclaration:
-	expr = ID (AsLabel attribute = [EventAttribute | QualifiedName])?
+	expr = ID ('as' attribute = [EventAttribute | QualifiedName])?
 ;
 
 EventSourceDeclaration:
-	FromLabel sources += EventSource (',' sources += EventSource)* 
+	'from' sources += EventSource (',' sources += EventSource)* 
 ;
 
 EventSource:
-	SourceLabel systems += [EventSourceType | QualifiedName] 
+	('source' | 'sources') systems += [EventSourceType | QualifiedName] 
 		(',' systems += [EventSourceType | QualifiedName])*
-	EventLabel events += [Event | QualifiedName] 
+	('event' | 'events') events += [Event | QualifiedName] 
 		(',' events += [Event | QualifiedName])*
-	(AsLabel sourceName = ID)? 
+	('as' sourceName = ID)? 
 ;
 
 EventSourceType:
@@ -96,7 +96,7 @@ EventSourceType:
 
 // FIXME: make proper window declaration!
 WindowDeclaration:
-	WindowLabel expression = WindowExpression
+	'window' expression = WindowExpression
 ;
 
 WindowExpression:
@@ -104,7 +104,7 @@ WindowExpression:
 ;
 
 BatchWindow:
-	value=INT EventLabel?
+	value=INT ('event' | 'events')?
 ;
 
 TimeWindow:
@@ -121,11 +121,11 @@ enum TimeUnit:
 ;
 
 MonitoringConditionDeclaration:
-	WhereLabel expression = ConditionalExpression
+	'where' expression = ConditionalExpression
 ;
 
 FactRule:
-	FactRuleLabel name = ID '{'
+	'factrule' name = ID '{'
 		(
 			sources += EventSourceDeclaration |
 			assignments += AttributeAssignment
@@ -134,7 +134,7 @@ FactRule:
 ;
 
 AttributeAssignment:
-	SetLabel name=ID value=ConditionalExpression
+	'set' name=ID value=ConditionalExpression
 ;
 
 /* Expression syntax adapted from 
@@ -272,53 +272,3 @@ QualifiedNameWithWildcard:
 	QualifiedName '.*'?	
 ;
 
-SystemLabel:
-	'system' | 'SYSTEM'
-;
-
-MonitoringRuleLabel:
-	'monitoringrule' | 'MONITORINGRULE' | 
-	'monitor' | 'MONITOR'
-;
-
-EmitLabel:
-	'emit' | 'EMIT'
-;
-
-FromLabel:
-	'from' | 'FROM'
-;
-
-SourceLabel:
-	'source' | 'sources' |
-	'SOURCE' | 'SOURCES'
-;
-
-ActionLabel:
-	'action' | 'ACTION'
-;
-
-EventLabel:
-	'event' | 'events' |
-	'EVENT' | 'EVENTS'
-;
-
-AsLabel:
-	'as' | 'AS'
-;
-
-WhereLabel:
-	'where' | 'WHERE'
-;
-
-WindowLabel:
-	'window' | 'WINDOW'
-;
-
-FactRuleLabel:
-	'factrule' | 'FACTRULE'
-;
-
-SetLabel:
-	'set' | 'SET'
-;
