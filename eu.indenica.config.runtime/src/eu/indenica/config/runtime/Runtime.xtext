@@ -75,7 +75,7 @@ EventEmissionDeclaration:
 ;
 
 AttributeEmissionDeclaration:
-	expr = ID ('as' attribute = [EventAttribute | QualifiedName])?
+	expr = ConditionalExpression ('as' attribute = [EventAttribute | QualifiedName])?
 ;
 
 EventSourceDeclaration:
@@ -152,7 +152,7 @@ ConditionalOrExpression returns ConditionalExpression:
 ;
 
 OrOperator:
-	{OrOperator} ('||' | 'or' | 'OR')
+	{OrOperator} operator=('||' | 'or' | 'OR')
 ;
 
 ConditionalAndExpression returns ConditionalExpression:
@@ -161,7 +161,7 @@ ConditionalAndExpression returns ConditionalExpression:
 ;
 
 AndOperator:
-	{AndOperator} ('&&' | 'and' | 'AND')
+	{AndOperator} operator=('&&' | 'and' | 'AND')
 ;
 
 EqualityExpression returns ConditionalExpression:
@@ -171,7 +171,7 @@ EqualityExpression returns ConditionalExpression:
 ;
 
 EqualityOperator:
-	{EqualityOperator} ('=' | '!=')
+	{EqualityOperator} operator=('=' | '!=')
 ;
 
 RelationalExpression returns ConditionalExpression:
@@ -181,7 +181,7 @@ RelationalExpression returns ConditionalExpression:
 ;
 
 CompareOperator:
-	{CompareOperator} ('<' | '<=' | '>=' | '>')
+	{CompareOperator} operator=('<' | '<=' | '>=' | '>')
 ;
 
 AdditiveExpression returns ConditionalExpression:
@@ -192,7 +192,7 @@ AdditiveExpression returns ConditionalExpression:
 ;
 
 AdditiveOperator:
-	{AdditiveOperator} ('+' | '-')
+	{AdditiveOperator} operator=('+' | '-')
 ;
 
 MultiplicativeExpression returns ConditionalExpression:
@@ -203,21 +203,17 @@ MultiplicativeExpression returns ConditionalExpression:
 ;
 
 MultiplicativeOperator:
-	{MultiplicativeOperator} ('*' | '/' | '%')
+	{MultiplicativeOperator} operator=('*' | '/' | '%')
 ;
 
 UnaryExpression returns ConditionalExpression:
-	{UnaryExpression} operator=UnaryOperatorLiteral 
+	{UnaryExpression} operator=UnaryOperator 
 		operand=PrimaryExpression 
 	| PrimaryExpression
 ;
 
-UnaryOperatorLiteral:
-	'-' | 'not' | '!'
-;
-
 UnaryOperator returns Operator:
-	operator=UnaryOperatorLiteral
+	{UnaryOperator} operator=('-' | 'not' | '!')
 ;
 
 Operator returns Operator:

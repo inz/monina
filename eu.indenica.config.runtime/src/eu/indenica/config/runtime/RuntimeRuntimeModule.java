@@ -3,7 +3,20 @@
  */
 package eu.indenica.config.runtime;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.URIConverter;
+import org.eclipse.xtext.resource.containers.FlatResourceSetBasedAllContainersState;
+import org.eclipse.xtext.resource.containers.IAllContainersState;
+import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateProvider;
 import org.eclipse.xtext.scoping.IScopeProvider;
+
+import com.google.common.collect.Lists;
 
 import eu.indenica.config.runtime.scoping.RuntimeScopeProvider;
 
@@ -18,4 +31,43 @@ public class RuntimeRuntimeModule extends eu.indenica.config.runtime.AbstractRun
 	public Class<? extends IScopeProvider> bindIScopeProvider() {
 		return RuntimeScopeProvider.class;
 	}
+	
+	/*
+	 * FIX bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=382555#c0 
+	 */
+	public Class<? extends IAllContainersState.Provider>
+	bindIAllContainersState$Provider() {
+	  return FixedResourceSetBasedAllContainersStateProvider.class;
+	}
+
+	public static class FixedResourceSetBasedAllContainersStateProvider extends
+	    ResourceSetBasedAllContainersStateProvider {
+
+	  @Override
+	  protected IAllContainersState handleAdapterNotFound(
+	      ResourceSet resourceSet) {
+	    return new FixedFlatResourceSetBasedAllContainersState(resourceSet);
+	  }
+	}
+
+	public static class FixedFlatResourceSetBasedAllContainersState extends
+	    FlatResourceSetBasedAllContainersState {
+
+	  public FixedFlatResourceSetBasedAllContainersState(ResourceSet rs) {
+	    super(rs);
+	  }
+
+	  public Collection<URI> getContainedURIs(String containerHandle) {
+	    if (!getHandle().equals(containerHandle))
+	      return Collections.emptySet();
+	    ResourceSet resourceSet = getResourceSet();
+	    List<URI> uris = Lists.newArrayListWithCapacity(resourceSet
+	        .getResources().size());
+	    URIConverter uriConverter = resourceSet.getURIConverter();
+	    for (Resource r : resourceSet.getResources())
+	      uris.add(uriConverter.normalize(r.getURI()));
+	    return uris;
+	  }
+	}
+	/* ENDFIX */
 }

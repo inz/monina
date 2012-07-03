@@ -5,7 +5,6 @@ package eu.indenica.config.runtime.scoping;
 
 import java.util.Collection;
 
-import org.eclipse.emf.ecore.EGenericType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.xtext.scoping.IScope;
@@ -14,6 +13,7 @@ import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
 
 import com.google.common.collect.Lists;
 
+import eu.indenica.config.runtime.runtime.AttributeEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.EventSource;
@@ -28,11 +28,34 @@ import eu.indenica.config.runtime.runtime.MonitoringRule;
  * 
  */
 public class RuntimeScopeProvider extends AbstractDeclarativeScopeProvider {
-	IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref) {
-		return Scopes.scopeFor(ctx.getEvent().getAttributes());
+//	IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref) {
+//		logger.info("event attributes: " + ctx.getEvent().getAttributes().toString());
+//		return Scopes.scopeFor(ctx.getEvent().getAttributes());
+//	}
+
+	/**
+	 * Looks up valid event attributes for rename statements in event attribute
+	 * emit statement.
+	 * 
+	 * @param ctx the attribute emit statement
+	 * @param ref the reference to the event attribute
+	 * @return a scope containing all valid event attributes
+	 */
+	IScope scope_AttributeEmissionDeclaration_attribute(
+			final AttributeEmissionDeclaration ctx, final EReference ref) {
+		return Scopes.scopeFor(
+				((EventEmissionDeclaration)ctx.eContainer()).getEvent()
+				.getAttributes());
 	}
 
-	IScope scope_JvmIdentifiableElement(MonitoringRule ctx, EReference ref) {
+	/**
+	 * Looks up generally available event attributes within a monitoring rule
+	 * 
+	 * @param ctx the monitoring rule
+	 * @param ref 
+	 * @return a scope containing all valid event attributes
+	 */
+	IScope scope_EventAttribute(final MonitoringRule ctx, final EReference ref) {
 		Collection<EObject> elements = Lists.newArrayList();
 		Collection<EventSource> sources = Lists.newArrayList();
 
@@ -40,13 +63,16 @@ public class RuntimeScopeProvider extends AbstractDeclarativeScopeProvider {
 			sources.addAll(source.getSources());
 
 		for(EventSource source : sources) {
-			elements.add(source);
 			for(Event event : source.getEvents()) {
-				elements.add(event);
+				// elements.add(event);
 				elements.addAll(event.getAttributes());
 			}
 		}
-
+		if(logger.isInfoEnabled()) {
+			logger.info("Scope: ");
+			for(EObject o : elements)
+				logger.info("  " + o.toString());
+		}
 		return Scopes.scopeFor(elements);
 	}
 }
