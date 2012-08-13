@@ -17,7 +17,7 @@ Import:
 ;
 
 System:
-	'system' name = QualifiedName '{'
+	'component' name = QualifiedName '{'
 		metadata = SystemMetadata
 		(elements += SystemElement)*
 	'}'
