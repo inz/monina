@@ -5,21 +5,22 @@ grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.xbase.Xbase
 generate runtime "http://www.indenica.eu/config/runtime/Runtime"
  
 RuntimeModel:
- (elements += AbstractElement)*
+ (elements+=AbstractElement)*
 ;
  
 AbstractElement:
-  Import | Event | Action | System | MonitoringRule | FactRule // | AdaptationRule
+  Import | Event | Action | System | MonitoringQuery | FactRule // | AdaptationRule
 ;
 
 Import:
-	'import' importedNamespace = QualifiedNameWithWildcard
+	'import' importedNamespace=QualifiedNameWithWildcard
 ;
 
 System:
-	'component' name = QualifiedName '{'
-		metadata = SystemMetadata
-		(elements += SystemElement)*
+	'component' name=QualifiedName '{'
+		metadata=SystemMetadata &
+		(elements+=SystemElement)* &
+		host=HostRef
 	'}'
 ;
 
@@ -28,75 +29,146 @@ SystemElement:
 ;
 
 SystemMetadata:
-	{SystemMetadata} (('vendor' vendor = STRING)? &
-	('version' version = STRING)?)
+	{SystemMetadata} (('vendor' vendor=STRING)? &
+	('version' version=STRING)?)
 ;
 
 Event:
-	'event' name = ID '{'
-		(attributes += EventAttribute)*
+	'event' name=ID '{'
+		(attributes+=EventAttribute)*
 	'}'
 ;
 
 EventRef:
-	'event' name = [Event | QualifiedName]
+	'event' name=[Event | QualifiedName] 
+	frequency=EmissionFrequency?
+;
+
+EmissionFrequency:
+	'every' (interval=DECIMAL unit=TimeUnit) | (frequency=DECIMAL 'Hz')
 ;
 
 Action:
-	'action' name = ID '{'
-		(parameters += EventAttribute)*
+	'action' name=ID '{'
+		(parameters+=EventAttribute)*
 	'}'
 ;
 
 ActionRef:
-	'action' name = [Action | QualifiedName]
+	'action' name=[Action | QualifiedName]
 ;
 
 EventAttribute:
-	name = ID ':' type = QualifiedName
+	name=ID ':' type=QualifiedName
+;
+
+Host:
+	'host' name=ID '{'
+		address=HostAddress & capacity=HostCapacity & 
+		endpointAddress=EndpointAddress
+	'}'
+;
+
+HostRef:
+	'host' name=[Host | QualifiedName]
+;
+
+HostAddress:
+	fqdn=Fqdn | ipv4=IPV4_ADDRESS | ipv6=IPV6_ADDRESS
+;
+
+Fqdn:
+	QualifiedName
+;
+
+terminal IPV4_ADDRESS:
+	INT '.' INT '.' INT '.' INT
+;
+
+/*
+ * IPv6 Address specification from http://www.ietf.org/rfc/rfc2373.txt,
+ * Appendix B: 
+ *
+	  IPv6address=hexpart [ ":" IPv4address ]
+	  IPv4address=1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT
+	
+	  IPv6prefix =hexpart "/" 1*2DIGIT
+	
+	  hexpart=hexseq | hexseq "::" [ hexseq ] | "::" [ hexseq ]
+	  hexseq =hex4 *( ":" hex4)
+	  hex4   =1*4HEXDIG
+ */
+terminal IPV6_ADDRESS:
+	HEXPART (':' IPV4_ADDRESS)?
+;
+
+terminal fragment HEXPART:
+	HEXSEQ | HEXSEQ '::' HEXSEQ? | '::' HEXSEQ?
+;
+
+terminal fragment HEXSEQ:
+	HEX4 (':' HEX4)*
+;
+
+terminal fragment HEX4:
+	HEXDIGIT (HEXDIGIT (HEXDIGIT (HEXDIGIT)?)?)?
+;
+
+terminal fragment HEXDIGIT:
+	'0' .. '9' |
+	'A' .. 'F' |
+	'a' .. 'f'
+;
+
+HostCapacity:
+	'capacity' capacity=INT
+;
+
+EndpointAddress:
+	'endpoint' endpointAddress=STRING
 ;
  
-MonitoringRule:
-  'monitoringrule' name = ID '{'
+MonitoringQuery:
+  'query' name=ID '{'
 	(
-		sources += EventSourceDeclaration |
-		emits += EventEmissionDeclaration
+		sources+=EventSourceDeclaration |
+		emits+=EventEmissionDeclaration
 	)*
-  	window = WindowDeclaration?
-	condition = MonitoringConditionDeclaration? 
+  	window=WindowDeclaration?
+	condition=MonitoringConditionDeclaration? 
   '}'
 ;
 
 EventEmissionDeclaration:
-	'emit' event = [Event | QualifiedName] '('
-		attributes += AttributeEmissionDeclaration 
-		(',' attributes += AttributeEmissionDeclaration)*
+	'emit' event=[Event | QualifiedName] '('
+		attributes+=AttributeEmissionDeclaration 
+		(',' attributes+=AttributeEmissionDeclaration)*
 	')'
 ;
 
 AttributeEmissionDeclaration:
-	expr = ConditionalExpression ('as' attribute = [EventAttribute | QualifiedName])?
+	expr=ConditionalExpression ('as' attribute=[EventAttribute | QualifiedName])?
 ;
 
 EventSourceDeclaration:
-	'from' sources += EventSource (',' sources += EventSource)* 
+	'from' sources+=EventSource (',' sources+=EventSource)* 
 ;
 
 EventSource:
-	('source' | 'sources') systems += [EventSourceType | QualifiedName] 
-		(',' systems += [EventSourceType | QualifiedName])*
-	('event' | 'events') events += [Event | QualifiedName] 
-		(',' events += [Event | QualifiedName])*
-	('as' sourceName = ID)? 
+	('source' | 'sources') systems+=[EventSourceType | QualifiedName] 
+		(',' systems+=[EventSourceType | QualifiedName])*
+	('event' | 'events') events+=[Event | QualifiedName] 
+		(',' events+=[Event | QualifiedName])*
+	('as' sourceName=ID)? 
 ;
 
 EventSourceType:
-	System | MonitoringRule
+	System | MonitoringQuery
 ;
 
 // FIXME: make proper window declaration!
 WindowDeclaration:
-	'window' expression = WindowExpression
+	'window' expression=WindowExpression
 ;
 
 WindowExpression:
@@ -112,26 +184,29 @@ TimeWindow:
 ;
 
 enum TimeUnit:
-	SECONDS = 's' | SECONDS = 'sec' | SECONDS = 'second' | SECONDS = 'seconds' |
-	MINUTES = 'm' | MINUTES = 'min' | MINUTES = 'minute' | MINUTES = 'minutes' |
-	HOURS = 'h' | HOURS = 'hour' | HOURS = 'hours' |
-	DAYS = 'd' | DAYS = 'day' | DAYS = 'days' |
-	MONTHS = 'M' | MONTHS = 'month' | MONTHS = 'months' |
-	YEARS = 'y' | YEARS = 'year' | YEARS = 'years'
+	SECONDS='s' | SECONDS='sec' | SECONDS='second' | SECONDS='seconds' |
+	MINUTES='m' | MINUTES='min' | MINUTES='minute' | MINUTES='minutes' |
+	HOURS='h' | HOURS='hour' | HOURS='hours' |
+	DAYS='d' | DAYS='day' | DAYS='days' |
+	MONTHS='M' | MONTHS='month' | MONTHS='months' |
+	YEARS='y' | YEARS='year' | YEARS='years'
 ;
 
 MonitoringConditionDeclaration:
-	'where' expression = ConditionalExpression
+	'where' expression=ConditionalExpression
 ;
 
 FactRule:
-	'factrule' name = ID '{'
-		(
-			sources += EventSourceDeclaration |
-			assignments += AttributeAssignment
-		)*
+	{FactRule} 'fact' name=ID? '{'
+		source=EventSourceDeclaration
+		partitionKey=PartitionKey
 	'}'
 ;
+
+PartitionKey:
+	'by' key=[EventAttribute | QualifiedName]
+;
+
 
 AttributeAssignment:
 	'set' name=ID value=ConditionalExpression
@@ -243,7 +318,7 @@ Literal returns ConditionalExpression:
 ;
 
 BooleanLiteral returns ConditionalExpression:
-	{BooleanLiteral} ('false' | isTrue ?= 'true')
+	{BooleanLiteral} ('false' | isTrue?='true')
 ;
 
 NumberLiteral returns ConditionalExpression:

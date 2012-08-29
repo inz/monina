@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 import static org.junit.Assert.*
 import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.UnaryOperator
-import eu.indenica.config.runtime.runtime.MonitoringRule
+import eu.indenica.config.runtime.runtime.MonitoringQuery
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration
 import eu.indenica.config.runtime.runtime.MonitoringConditionDeclaration
@@ -49,7 +49,7 @@ class RuntimeDslParserTest {
 				attr1 : String
 			}
 
-			system sOne {
+			component sOne {
 				event eventOne
 			}	
 		''')
@@ -75,32 +75,32 @@ class RuntimeDslParserTest {
 				attrThree : String
 			}
 			
-			system sOne {
+			component sOne {
 				event eventOne
 			}
 			
-			system sTwo {
+			component sTwo {
 				event eventOne
 				event eventTwo
 			}
 			
-			monitoringrule ruleOne {
+			query ruleOne {
 				emit eventThree(attr1 * 2 as attr3)
 				from sources sOne, sTwo event eventOne as event1
 				window 10s
 				where -2 > attr1
 			}
 			
-			monitoringrule ruleTwo {
+			query ruleTwo {
 				from source sOne, sTwo events eventTwo, eventOne
 				from source sTwo event eventTwo
 				emit eventThree(1234 * 2453 as attrThree)
 				window 500
 			}
 			
-			factrule factOne {
+			fact factOne {
 				from source ruleTwo event eventThree
-				set factAttr1 3
+				by attr3
 			}
 		'''
 	}
@@ -129,7 +129,7 @@ class RuntimeDslParserTest {
 	}
 	
 	def dispatch void print(System s) {
-		println("system " + s.name)
+		println("component " + s.name)
 		for(e : s.elements) e.print
 	}
 	
@@ -138,8 +138,8 @@ class RuntimeDslParserTest {
 		println("  event ref " + ref.name.name)
 	}
 	
-	def dispatch void print(MonitoringRule rule) {
-		println("monitoringrule " + rule.name)
+	def dispatch void print(MonitoringQuery rule) {
+		println("query " + rule.name)
 		for(s : rule.sources) s.print
 		for(e : rule.emits) e.print
 		rule.window?.print

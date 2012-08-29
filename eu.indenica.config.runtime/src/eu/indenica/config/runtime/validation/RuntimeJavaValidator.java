@@ -2,7 +2,7 @@ package eu.indenica.config.runtime.validation;
 
 import org.eclipse.xtext.validation.Check;
 
-import eu.indenica.config.runtime.runtime.MonitoringRule;
+import eu.indenica.config.runtime.runtime.MonitoringQuery;
 import eu.indenica.config.runtime.runtime.RuntimePackage;
 
 public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
@@ -16,18 +16,18 @@ public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 	// }
 
 	@Check
-	public void checkMonitoringRuleHasSource(MonitoringRule monitoringRule) {
+	public void checkMonitoringRuleHasSource(MonitoringQuery monitoringRule) {
 		if(monitoringRule.getSources().isEmpty()) {
 			error("Monitoring rule must have at least one source",
-					RuntimePackage.Literals.MONITORING_RULE__SOURCES);
+					RuntimePackage.Literals.MONITORING_QUERY__SOURCES);
 		}
 	}
 	
 	@Check
-	public void checkMonitoringRuleHasEmit(MonitoringRule monitoringRule) {
+	public void checkMonitoringRuleHasEmit(MonitoringQuery monitoringRule) {
 		if(monitoringRule.getEmits().isEmpty()) {
 			error("Monitoring rule must emit at least one event",
-					RuntimePackage.Literals.MONITORING_RULE__EMITS);
+					RuntimePackage.Literals.MONITORING_QUERY__EMITS);
 		}
 	}
 }
