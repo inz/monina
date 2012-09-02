@@ -7,8 +7,8 @@ import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
 import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.RuntimeModel
-import eu.indenica.config.runtime.runtime.System
-import eu.indenica.config.runtime.runtime.SystemElement
+import eu.indenica.config.runtime.runtime.Component
+import eu.indenica.config.runtime.runtime.ComponentElement
 import org.eclipse.xtext.junit4.InjectWith
 import org.eclipse.xtext.junit4.XtextRunner
 import org.eclipse.xtext.junit4.util.ParseHelper
@@ -16,8 +16,6 @@ import org.eclipse.xtext.junit4.validation.ValidationTestHelper
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-
-import static org.junit.Assert.*
 import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.UnaryOperator
 import eu.indenica.config.runtime.runtime.MonitoringQuery
@@ -35,6 +33,8 @@ import eu.indenica.config.runtime.runtime.UnaryExpression
 import eu.indenica.config.runtime.runtime.FeatureCall
 import eu.indenica.config.runtime.runtime.NumberLiteral
 import eu.indenica.config.runtime.runtime.CompareOperator
+
+import static org.junit.Assert.*
 
 @InjectWith(typeof(RuntimeInjectorProvider))
 @RunWith(typeof(XtextRunner))
@@ -54,7 +54,7 @@ class RuntimeDslParserTest {
 			}	
 		''')
 		val e = model.elements.head as Event
-		val s = model.elements.get(1) as System
+		val s = model.elements.get(1) as Component
 		assertEquals(s.name, 'sOne')
 		assertEquals(e.name, 'eventOne')
 		assertSame((s.elements.head as EventRef).name, e)
@@ -73,26 +73,37 @@ class RuntimeDslParserTest {
 			event eventThree {
 				attr3 : String
 				attrThree : String
+				attributeThree : String
+			}
+			
+			action actionOne {
+				attr1 : String
+			}
+			
+			host hostOne {
+				"one"
 			}
 			
 			component sOne {
 				event eventOne
+				host hostOne
 			}
 			
 			component sTwo {
 				event eventOne
 				event eventTwo
+				action actionOne
 			}
 			
 			query ruleOne {
-				emit eventThree(attr1 * 2 as attr3)
-				from sources sOne, sTwo event eventOne as event1
+				emit eventThree(attr1 * 987 as attr3)
+				from source sOne, sTwo event eventOne as event1
 				window 10s
 				where -2 > attr1
 			}
 			
 			query ruleTwo {
-				from source sOne, sTwo events eventTwo, eventOne
+				from sources sOne, sTwo events eventTwo, eventOne
 				from source sTwo event eventTwo
 				emit eventThree(1234 * 2453 as attrThree)
 				window 500
@@ -100,7 +111,12 @@ class RuntimeDslParserTest {
 			
 			fact factOne {
 				from source ruleTwo event eventThree
-				by attr3
+				by eventThree.attributeThree
+			}
+			
+			rule ruleOne {
+				from factOne
+				when eventThree.attr3 = 4 then sTwo actionOne
 			}
 		'''
 	}
@@ -128,22 +144,22 @@ class RuntimeDslParserTest {
 		println("  attribute " + attribute.name + " : " + attribute.type)
 	}
 	
-	def dispatch void print(System s) {
+	def dispatch void print(Component s) {
 		println("component " + s.name)
 		for(e : s.elements) e.print
 	}
 	
-	def dispatch void print(SystemElement element) { println(element) }
+	def dispatch void print(ComponentElement element) { println(element) }
 	def dispatch void print(EventRef ref) {
 		println("  event ref " + ref.name.name)
 	}
 	
-	def dispatch void print(MonitoringQuery rule) {
-		println("query " + rule.name)
-		for(s : rule.sources) s.print
-		for(e : rule.emits) e.print
-		rule.window?.print
-		rule.condition?.print
+	def dispatch void print(MonitoringQuery query) {
+		println("query " + query.name)
+		for(s : query.sources) s.print
+		for(e : query.emits) e.print
+		query.window?.print
+		query.condition?.print
 	}
 	def dispatch void print(WindowDeclaration declaration) { 
 		print("  window ") 

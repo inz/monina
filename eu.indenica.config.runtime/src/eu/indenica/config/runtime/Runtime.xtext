@@ -9,27 +9,28 @@ RuntimeModel:
 ;
  
 AbstractElement:
-  Import | Event | Action | System | MonitoringQuery | FactRule // | AdaptationRule
+  Import | Event | Action | Component | MonitoringQuery | Fact | Host | 
+  AdaptationRule
 ;
 
 Import:
 	'import' importedNamespace=QualifiedNameWithWildcard
 ;
 
-System:
+Component:
 	'component' name=QualifiedName '{'
-		metadata=SystemMetadata &
-		(elements+=SystemElement)* &
-		host=HostRef
+		metadata=ComponentMetadata
+		(elements+=ComponentElement)*
+		host=HostRef?
 	'}'
 ;
 
-SystemElement:
+ComponentElement:
   EventRef | ActionRef
 ;
 
-SystemMetadata:
-	{SystemMetadata} (('vendor' vendor=STRING)? &
+ComponentMetadata:
+	{ComponentMetadata} (('vendor' vendor=STRING)? &
 	('version' version=STRING)?)
 ;
 
@@ -64,8 +65,9 @@ EventAttribute:
 
 Host:
 	'host' name=ID '{'
-		address=HostAddress & capacity=HostCapacity & 
-		endpointAddress=EndpointAddress
+		address=HostAddress?
+		endpointAddress=EndpointAddress?
+		capacity=HostCapacity?
 	'}'
 ;
 
@@ -74,16 +76,17 @@ HostRef:
 ;
 
 HostAddress:
-	fqdn=Fqdn | ipv4=IPV4_ADDRESS | ipv6=IPV6_ADDRESS
+	address=STRING
+//	fqdn=Fqdn | ipv4=IPV4_ADDRESS | ipv6=IPV6_ADDRESS
 ;
 
-Fqdn:
-	QualifiedName
-;
+//Fqdn:
+//	QualifiedName
+//;
 
-terminal IPV4_ADDRESS:
-	INT '.' INT '.' INT '.' INT
-;
+//terminal IPV4_ADDRESS:
+//	INT '.' INT '.' INT '.' INT
+//;
 
 /*
  * IPv6 Address specification from http://www.ietf.org/rfc/rfc2373.txt,
@@ -98,27 +101,27 @@ terminal IPV4_ADDRESS:
 	  hexseq =hex4 *( ":" hex4)
 	  hex4   =1*4HEXDIG
  */
-terminal IPV6_ADDRESS:
-	HEXPART (':' IPV4_ADDRESS)?
-;
-
-terminal fragment HEXPART:
-	HEXSEQ | HEXSEQ '::' HEXSEQ? | '::' HEXSEQ?
-;
-
-terminal fragment HEXSEQ:
-	HEX4 (':' HEX4)*
-;
-
-terminal fragment HEX4:
-	HEXDIGIT (HEXDIGIT (HEXDIGIT (HEXDIGIT)?)?)?
-;
-
-terminal fragment HEXDIGIT:
-	'0' .. '9' |
-	'A' .. 'F' |
-	'a' .. 'f'
-;
+//terminal IPV6_ADDRESS:
+//	HEXPART (':' IPV4_ADDRESS)?
+//;
+//
+//terminal HEXPART:
+//	HEXSEQ | HEXSEQ '::' HEXSEQ? | '::' HEXSEQ?
+//;
+//
+//terminal HEXSEQ:
+//	HEX4 (':' HEX4)*
+//;
+//
+//terminal HEX4:
+//	HEXDIGIT (HEXDIGIT (HEXDIGIT (HEXDIGIT)?)?)?
+//;
+//
+//terminal HEXDIGIT:
+//	'0' .. '9' |
+//	'A' .. 'F' |
+//	'a' .. 'f'
+//;
 
 HostCapacity:
 	'capacity' capacity=INT
@@ -130,12 +133,14 @@ EndpointAddress:
  
 MonitoringQuery:
   'query' name=ID '{'
-	(
+  	(
 		sources+=EventSourceDeclaration |
 		emits+=EventEmissionDeclaration
 	)*
   	window=WindowDeclaration?
-	condition=MonitoringConditionDeclaration? 
+	condition=MonitoringConditionDeclaration?
+	cost=Cost?
+	ratio=IoRatio?
   '}'
 ;
 
@@ -155,15 +160,23 @@ EventSourceDeclaration:
 ;
 
 EventSource:
-	('source' | 'sources') systems+=[EventSourceType | QualifiedName] 
-		(',' systems+=[EventSourceType | QualifiedName])*
+	('source' | 'sources') sources+=[EventSourceType | QualifiedName] 
+		(',' sources+=[EventSourceType | QualifiedName])*
 	('event' | 'events') events+=[Event | QualifiedName] 
 		(',' events+=[Event | QualifiedName])*
 	('as' sourceName=ID)? 
 ;
 
 EventSourceType:
-	System | MonitoringQuery
+	Component | MonitoringQuery
+;
+
+Cost:
+	'cost' cost=Number
+;
+
+IoRatio:
+	'ratio' ratio=Number
 ;
 
 // FIXME: make proper window declaration!
@@ -196,9 +209,9 @@ MonitoringConditionDeclaration:
 	'where' expression=ConditionalExpression
 ;
 
-FactRule:
-	{FactRule} 'fact' name=ID? '{'
-		source=EventSourceDeclaration
+Fact:
+	'fact' name=ID? '{'
+		source=EventSourceDeclaration &
 		partitionKey=PartitionKey
 	'}'
 ;
@@ -211,6 +224,30 @@ PartitionKey:
 AttributeAssignment:
 	'set' name=ID value=ConditionalExpression
 ;
+
+AdaptationRule:
+	'rule' name=ID '{'
+		sources+=AdaptationRuleSource+
+		stmts+=AdaptationStatement+
+		cost=Cost?
+	'}'
+;
+
+AdaptationRuleSource:
+	'from' fact=[Fact | QualifiedName] ('as' name=ID)?
+;
+
+
+AdaptationStatement:
+	'when' conditon=ConditionalExpression 'then' action=ActionExpression
+;
+
+ActionExpression:
+	component=[Component|QualifiedName] action=[Action | QualifiedName] 
+	('(' attributes+=AttributeEmissionDeclaration ')')?
+;
+
+
 
 /* Expression syntax adapted from 
  * http://openjdk.java.net/projects/compiler-grammar/antlrworks/Java.g
@@ -322,7 +359,7 @@ BooleanLiteral returns ConditionalExpression:
 ;
 
 NumberLiteral returns ConditionalExpression:
-	{NumberLiteral} value=Number	
+	{NumberLiteral} value=Number
 ;
 
 
