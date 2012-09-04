@@ -56,7 +56,7 @@ Action:
 ;
 
 ActionRef:
-	'action' name=[Action | QualifiedName]
+	'action' name=[Action]
 ;
 
 EventAttribute:
@@ -243,7 +243,7 @@ AdaptationStatement:
 ;
 
 ActionExpression:
-	component=[Component|QualifiedName] action=[Action | QualifiedName] 
+	component=[Component | QualifiedName] action=[Action | QualifiedName] 
 	('(' attributes+=AttributeEmissionDeclaration ')')?
 ;
 

@@ -3,12 +3,29 @@ package eu.indenica.config.runtime.tests
 import com.google.inject.Inject
 import eu.indenica.config.runtime.RuntimeInjectorProvider
 import eu.indenica.config.runtime.runtime.AbstractElement
-import eu.indenica.config.runtime.runtime.Event
-import eu.indenica.config.runtime.runtime.EventAttribute
-import eu.indenica.config.runtime.runtime.EventRef
-import eu.indenica.config.runtime.runtime.RuntimeModel
+import eu.indenica.config.runtime.runtime.ActionRef
+import eu.indenica.config.runtime.runtime.BatchWindow
+import eu.indenica.config.runtime.runtime.BinaryExpression
+import eu.indenica.config.runtime.runtime.CompareOperator
 import eu.indenica.config.runtime.runtime.Component
 import eu.indenica.config.runtime.runtime.ComponentElement
+import eu.indenica.config.runtime.runtime.ConditionalExpression
+import eu.indenica.config.runtime.runtime.Event
+import eu.indenica.config.runtime.runtime.EventAttribute
+import eu.indenica.config.runtime.runtime.EventEmissionDeclaration
+import eu.indenica.config.runtime.runtime.EventRef
+import eu.indenica.config.runtime.runtime.EventSource
+import eu.indenica.config.runtime.runtime.EventSourceDeclaration
+import eu.indenica.config.runtime.runtime.FeatureCall
+import eu.indenica.config.runtime.runtime.MonitoringConditionDeclaration
+import eu.indenica.config.runtime.runtime.MonitoringQuery
+import eu.indenica.config.runtime.runtime.NumberLiteral
+import eu.indenica.config.runtime.runtime.Operator
+import eu.indenica.config.runtime.runtime.RuntimeModel
+import eu.indenica.config.runtime.runtime.TimeWindow
+import eu.indenica.config.runtime.runtime.UnaryExpression
+import eu.indenica.config.runtime.runtime.UnaryOperator
+import eu.indenica.config.runtime.runtime.WindowDeclaration
 import org.eclipse.xtext.junit4.InjectWith
 import org.eclipse.xtext.junit4.XtextRunner
 import org.eclipse.xtext.junit4.util.ParseHelper
@@ -16,23 +33,6 @@ import org.eclipse.xtext.junit4.validation.ValidationTestHelper
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import eu.indenica.config.runtime.runtime.ActionRef
-import eu.indenica.config.runtime.runtime.UnaryOperator
-import eu.indenica.config.runtime.runtime.MonitoringQuery
-import eu.indenica.config.runtime.runtime.EventSourceDeclaration
-import eu.indenica.config.runtime.runtime.EventEmissionDeclaration
-import eu.indenica.config.runtime.runtime.MonitoringConditionDeclaration
-import eu.indenica.config.runtime.runtime.WindowDeclaration
-import eu.indenica.config.runtime.runtime.Action
-import eu.indenica.config.runtime.runtime.TimeWindow
-import eu.indenica.config.runtime.runtime.BatchWindow
-import eu.indenica.config.runtime.runtime.ConditionalExpression
-import eu.indenica.config.runtime.runtime.BinaryExpression
-import eu.indenica.config.runtime.runtime.Operator
-import eu.indenica.config.runtime.runtime.UnaryExpression
-import eu.indenica.config.runtime.runtime.FeatureCall
-import eu.indenica.config.runtime.runtime.NumberLiteral
-import eu.indenica.config.runtime.runtime.CompareOperator
 
 import static org.junit.Assert.*
 
@@ -111,7 +111,7 @@ class RuntimeDslParserTest {
 			
 			fact factOne {
 				from source ruleTwo event eventThree
-				by eventThree.attributeThree
+				by attributeThree
 			}
 			
 			rule ruleOne {
@@ -154,13 +154,19 @@ class RuntimeDslParserTest {
 		println("  event ref " + ref.name.name)
 	}
 	
+	def dispatch void print(ActionRef ref) {
+		println("  action ref " + ref.name.name)
+	}
+	
 	def dispatch void print(MonitoringQuery query) {
 		println("query " + query.name)
 		for(s : query.sources) s.print
+		println()
 		for(e : query.emits) e.print
 		query.window?.print
 		query.condition?.print
 	}
+	
 	def dispatch void print(WindowDeclaration declaration) { 
 		print("  window ") 
 		declaration.expression.print
@@ -221,9 +227,25 @@ class RuntimeDslParserTest {
 
 	
 	def dispatch void print(EventSourceDeclaration declaration) {
-		println(declaration)
+		print("  from ")
+		declaration.sources.forEach[s | s.print]
+		print(" ")
 	}
 
+	def dispatch void print(EventSource source) {
+		print("sources ")
+		print(source.sources.map[s |
+			switch s { 
+				Component: (s as Component).name
+			    MonitoringQuery: (s as MonitoringQuery).name
+			    default: s.getClass().getSimpleName()
+			}
+		].join(", "))
+		print(" events ")
+		print(source.events.map[e | e.name].join(", "))
+		if(source.sourceName != null)
+			print(" as " + source.sourceName)
+	}
 	
 	def checkModel(CharSequence prog) {
         val model = parser.parse(prog)

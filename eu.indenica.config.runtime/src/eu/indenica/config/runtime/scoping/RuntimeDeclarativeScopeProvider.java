@@ -5,6 +5,7 @@ package eu.indenica.config.runtime.scoping;
 
 import java.util.Collection;
 
+import org.apache.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.xtext.scoping.IScope;
@@ -18,6 +19,7 @@ import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.EventSource;
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration;
+import eu.indenica.config.runtime.runtime.Fact;
 import eu.indenica.config.runtime.runtime.MonitoringQuery;
 
 /**
@@ -27,35 +29,44 @@ import eu.indenica.config.runtime.runtime.MonitoringQuery;
  * how and when to use it
  * 
  */
-public class RuntimeScopeProvider extends AbstractDeclarativeScopeProvider {
-//	IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref) {
-//		logger.info("event attributes: " + ctx.getEvent().getAttributes().toString());
-//		return Scopes.scopeFor(ctx.getEvent().getAttributes());
-//	}
+public class RuntimeDeclarativeScopeProvider extends AbstractDeclarativeScopeProvider {
+	
+	private final static Logger logger = Logger
+			.getLogger(RuntimeDeclarativeScopeProvider.class);
+
+	// IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref)
+	// {
+	// logger.info("event attributes: " +
+	// ctx.getEvent().getAttributes().toString());
+	// return Scopes.scopeFor(ctx.getEvent().getAttributes());
+	// }
 
 	/**
 	 * Looks up valid event attributes for rename statements in event attribute
 	 * emit statement.
 	 * 
-	 * @param ctx the attribute emit statement
-	 * @param ref the reference to the event attribute
+	 * @param ctx
+	 *            the attribute emit statement
+	 * @param ref
+	 *            the reference to the event attribute
 	 * @return a scope containing all valid event attributes
 	 */
 	IScope scope_AttributeEmissionDeclaration_attribute(
 			final AttributeEmissionDeclaration ctx, final EReference ref) {
-		return Scopes.scopeFor(
-				((EventEmissionDeclaration)ctx.eContainer()).getEvent()
-				.getAttributes());
+		return Scopes.scopeFor(((EventEmissionDeclaration) ctx.eContainer())
+				.getEvent().getAttributes());
 	}
 
 	/**
 	 * Looks up generally available event attributes within a monitoring rule
 	 * 
-	 * @param ctx the monitoring rule
-	 * @param ref 
+	 * @param ctx
+	 *            the monitoring rule
+	 * @param ref
 	 * @return a scope containing all valid event attributes
 	 */
-	IScope scope_EventAttribute(final MonitoringQuery ctx, final EReference ref) {
+	IScope scope_EventAttribute(
+			final MonitoringQuery ctx, final EReference ref) {
 		Collection<EObject> elements = Lists.newArrayList();
 		Collection<EventSource> sources = Lists.newArrayList();
 
@@ -65,6 +76,29 @@ public class RuntimeScopeProvider extends AbstractDeclarativeScopeProvider {
 		for(EventSource source : sources) {
 			for(Event event : source.getEvents()) {
 				// elements.add(event);
+				elements.addAll(event.getAttributes());
+			}
+		}
+		if(logger.isInfoEnabled()) {
+			logger.info("Scope: ");
+			for(EObject o : elements)
+				logger.info("  " + o.toString());
+		}
+		return Scopes.scopeFor(elements);
+	}
+
+	/**
+	 * Looks up event attributes available for partitioning in Fact rules
+	 * 
+	 */
+	IScope scope_EventAttribute(final Fact ctx, final EReference ref) {
+		Collection<EObject> elements = Lists.newArrayList();
+		Collection<EventSource> sources = Lists.newArrayList();
+
+		sources.addAll(ctx.getSource().getSources());
+
+		for(EventSource source : sources) {
+			for(Event event : source.getEvents()) {
 				elements.addAll(event.getAttributes());
 			}
 		}

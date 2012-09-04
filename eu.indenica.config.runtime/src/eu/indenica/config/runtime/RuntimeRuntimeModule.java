@@ -15,59 +15,91 @@ import org.eclipse.xtext.resource.containers.FlatResourceSetBasedAllContainersSt
 import org.eclipse.xtext.resource.containers.IAllContainersState;
 import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateProvider;
 import org.eclipse.xtext.scoping.IScopeProvider;
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
+import org.eclipse.xtext.xbase.scoping.XbaseImportedNamespaceScopeProvider;
+import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 
 import com.google.common.collect.Lists;
+import com.google.inject.Binder;
+import com.google.inject.name.Names;
 
-import eu.indenica.config.runtime.scoping.RuntimeScopeProvider;
+import eu.indenica.config.runtime.scoping.RuntimeDeclarativeScopeProvider;
+import eu.indenica.config.runtime.scoping.RuntimeXbaseScopeProvider;
 
 /**
- * Use this class to register components to be used at runtime / without the Equinox extension registry.
+ * Use this class to register components to be used at runtime / without the
+ * Equinox extension registry.
  */
-public class RuntimeRuntimeModule extends eu.indenica.config.runtime.AbstractRuntimeRuntimeModule {
-	/* (non-Javadoc)
-	 * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIScopeProvider()
+public class RuntimeRuntimeModule extends
+		eu.indenica.config.runtime.AbstractRuntimeRuntimeModule {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIScopeProvider
+	 * ()
 	 */
 	@Override
 	public Class<? extends IScopeProvider> bindIScopeProvider() {
-		return RuntimeScopeProvider.class;
+		return RuntimeXbaseScopeProvider.class;
 	}
-	
+
 	/*
-	 * FIX bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=382555#c0 
+	 * (non-Javadoc)
+	 * 
+	 * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#
+	 * configureIScopeProviderDelegate(com.google.inject.Binder)
+	 */
+	@Override
+	public void configureIScopeProviderDelegate(Binder binder) {
+		// super.configureIScopeProviderDelegate(binder);
+		binder.bind(IScopeProvider.class)
+				.annotatedWith(
+						Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+				.to(XbaseImportedNamespaceScopeProvider.class);
+		binder.bind(IScopeProvider.class)
+				.annotatedWith(
+						Names.named(RuntimeXbaseScopeProvider.NAMED_DELEGATE))
+				.to(RuntimeDeclarativeScopeProvider.class);
+	}
+
+	/*
+	 * FIX bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=382555#c0
 	 */
 	public Class<? extends IAllContainersState.Provider>
-	bindIAllContainersState$Provider() {
-	  return FixedResourceSetBasedAllContainersStateProvider.class;
+			bindIAllContainersState$Provider() {
+		return FixedResourceSetBasedAllContainersStateProvider.class;
 	}
 
 	public static class FixedResourceSetBasedAllContainersStateProvider extends
-	    ResourceSetBasedAllContainersStateProvider {
+			ResourceSetBasedAllContainersStateProvider {
 
-	  @Override
-	  protected IAllContainersState handleAdapterNotFound(
-	      ResourceSet resourceSet) {
-	    return new FixedFlatResourceSetBasedAllContainersState(resourceSet);
-	  }
+		@Override
+		protected IAllContainersState handleAdapterNotFound(
+				ResourceSet resourceSet) {
+			return new FixedFlatResourceSetBasedAllContainersState(resourceSet);
+		}
 	}
 
 	public static class FixedFlatResourceSetBasedAllContainersState extends
-	    FlatResourceSetBasedAllContainersState {
+			FlatResourceSetBasedAllContainersState {
 
-	  public FixedFlatResourceSetBasedAllContainersState(ResourceSet rs) {
-	    super(rs);
-	  }
+		public FixedFlatResourceSetBasedAllContainersState(ResourceSet rs) {
+			super(rs);
+		}
 
-	  public Collection<URI> getContainedURIs(String containerHandle) {
-	    if (!getHandle().equals(containerHandle))
-	      return Collections.emptySet();
-	    ResourceSet resourceSet = getResourceSet();
-	    List<URI> uris = Lists.newArrayListWithCapacity(resourceSet
-	        .getResources().size());
-	    URIConverter uriConverter = resourceSet.getURIConverter();
-	    for (Resource r : resourceSet.getResources())
-	      uris.add(uriConverter.normalize(r.getURI()));
-	    return uris;
-	  }
+		public Collection<URI> getContainedURIs(String containerHandle) {
+			if(!getHandle().equals(containerHandle))
+				return Collections.emptySet();
+			ResourceSet resourceSet = getResourceSet();
+			List<URI> uris =
+					Lists.newArrayListWithCapacity(resourceSet.getResources()
+							.size());
+			URIConverter uriConverter = resourceSet.getURIConverter();
+			for(Resource r : resourceSet.getResources())
+				uris.add(uriConverter.normalize(r.getURI()));
+			return uris;
+		}
 	}
 	/* ENDFIX */
 }
