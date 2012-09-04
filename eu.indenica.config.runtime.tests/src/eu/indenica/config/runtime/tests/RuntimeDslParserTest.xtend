@@ -57,7 +57,7 @@ class RuntimeDslParserTest {
 		val s = model.elements.get(1) as Component
 		assertEquals(s.name, 'sOne')
 		assertEquals(e.name, 'eventOne')
-		assertSame((s.elements.head as EventRef).name, e)
+		assertSame((s.elements.head as EventRef).event, e)
 	}
 	
 	def String sampleModel() {
@@ -151,11 +151,11 @@ class RuntimeDslParserTest {
 	
 	def dispatch void print(ComponentElement element) { println(element) }
 	def dispatch void print(EventRef ref) {
-		println("  event ref " + ref.name.name)
+		println("  event ref " + ref.event.name)
 	}
 	
 	def dispatch void print(ActionRef ref) {
-		println("  action ref " + ref.name.name)
+		println("  action ref " + ref.action.name)
 	}
 	
 	def dispatch void print(MonitoringQuery query) {

@@ -35,6 +35,10 @@
             </reference>
          </activeWhen>
       </handler>
+        <handler
+              class="eu.indenica.config.runtime.ui.handler.DeployHandler"
+              commandId="eu.indenica.config.runtime.ui.deployment.deploy">
+        </handler>
     </extension>
     <extension point="org.eclipse.core.expressions.definitions">
         <definition id="eu.indenica.config.runtime.Runtime.Editor.opened">
@@ -96,6 +100,17 @@
             description="Trigger expensive validation"
             id="eu.indenica.config.runtime.Runtime.validate"
             name="Validate">
+      </command>
+      <category
+            description="Deployment Commands"
+            id="eu.indenica.config.runtime.ui.deployment"
+            name="Deployment">
+      </category>
+      <command
+            categoryId="eu.indenica.config.runtime.ui.deployment"
+            description="Deploy current configuration"
+            id="eu.indenica.config.runtime.ui.deployment.deploy"
+            name="Deploy">
       </command>
     </extension>
     <extension point="org.eclipse.ui.menus">
@@ -420,6 +435,23 @@
             class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.ui.editor.model.XtextDocumentProvider"
             extensions="irt">
     </provider>
+  </extension>
+  <extension
+        point="org.eclipse.ui.menus">
+     <menuContribution
+           allPopups="false"
+           locationURI="menu:org.eclipse.ui.main.menu">
+        <menu
+              id="eu.indenica.menu.deployment"
+              label="Indenica Deployment"
+              mnemonic="d">
+           <command
+                 commandId="eu.indenica.config.runtime.ui.deployment.deploy"
+                 label="Deploy"
+                 style="push">
+           </command>
+        </menu>
+     </menuContribution>
   </extension>
 
 </plugin>

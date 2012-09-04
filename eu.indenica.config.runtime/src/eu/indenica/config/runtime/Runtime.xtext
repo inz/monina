@@ -10,7 +10,13 @@ RuntimeModel:
  
 AbstractElement:
   Import | Event | Action | Component | MonitoringQuery | Fact | Host | 
-  AdaptationRule
+  AdaptationRule | PackageDeclaration
+;
+
+PackageDeclaration:
+	'package' name=QualifiedName '{'
+		elements+=AbstractElement*
+	'}'
 ;
 
 Import:
@@ -18,16 +24,21 @@ Import:
 ;
 
 Component:
-	'component' name=QualifiedName '{'
+	'component' name=ID '{'
 		metadata=ComponentMetadata
 		(elements+=ComponentElement)*
+//		(
+//			actions+=ActionRef |
+//			emits+=EventRef
+//		)*
 		host=HostRef?
 	'}'
 ;
 
 ComponentElement:
-  EventRef | ActionRef
+	EventRef | ActionRef
 ;
+
 
 ComponentMetadata:
 	{ComponentMetadata} (('vendor' vendor=STRING)? &
@@ -41,7 +52,7 @@ Event:
 ;
 
 EventRef:
-	'event' name=[Event | QualifiedName] 
+	'event' event=[Event | QualifiedName] 
 	frequency=EmissionFrequency?
 ;
 
@@ -56,11 +67,11 @@ Action:
 ;
 
 ActionRef:
-	'action' name=[Action]
+	'action' action=[Action|QualifiedName]
 ;
 
 EventAttribute:
-	name=ID ':' type=QualifiedName
+	name=ID ':' type=JvmTypeReference
 ;
 
 Host:
@@ -142,6 +153,10 @@ MonitoringQuery:
 	cost=Cost?
 	ratio=IoRatio?
   '}'
+;
+
+EventMetaRef:
+	EventRef | EventEmissionDeclaration
 ;
 
 EventEmissionDeclaration:
