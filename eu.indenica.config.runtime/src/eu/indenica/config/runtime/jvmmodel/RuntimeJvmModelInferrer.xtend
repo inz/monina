@@ -1,10 +1,12 @@
 package eu.indenica.config.runtime.jvmmodel
 
 import com.google.inject.Inject
+import eu.indenica.config.runtime.runtime.Action
+import eu.indenica.config.runtime.runtime.Event
+import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
 import org.eclipse.xtext.xbase.jvmmodel.IJvmDeclaredTypeAcceptor
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
-import eu.indenica.config.runtime.runtime.RuntimeModel
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -18,6 +20,8 @@ class RuntimeJvmModelInferrer extends AbstractModelInferrer {
      * convenience API to build and initialize JVM types and their members.
      */
 	@Inject extension JvmTypesBuilder
+	
+	@Inject extension IQualifiedNameProvider
 
 	/**
 	 * The dispatch method {@code infer} is called for each instance of the
@@ -44,20 +48,27 @@ class RuntimeJvmModelInferrer extends AbstractModelInferrer {
 	 *            rely on linking using the index if isPreIndexingPhase is
 	 *            <code>true</code>.
 	 */
-   	def dispatch void infer(RuntimeModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-   		// Here you explain how your model is mapped to Java elements, by writing the actual translation code.
-   		
-   		// An implementation for the initial hello world example could look like this:
-//   		acceptor.accept(element.toClass("my.company.greeting.MyGreetings"))
-//   			.initializeLater([
-//   				for (greeting : element.greetings) {
-//   					members += greeting.toMethod("hello" + greeting.name, greeting.newTypeRef(typeof(String))) [
-//   						body = [
-//   							append('''return "Hello «greeting.name»";''')
-//   						]
-//   					]
-//   				}
-//   			])
+   	def dispatch void infer(Event element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
+   			documentation = element.documentation
+			// superTypes += Class<eu::indenica::monitoring::Event>
+   			for(attribute : element.attributes) {
+   				members += attribute.toField(attribute.name, attribute.type)
+   				members += attribute.toSetter(attribute.name, attribute.type)
+   				members += attribute.toGetter(attribute.name, attribute.type)
+   			}
+   		]
+   	}
+   	
+   	def dispatch void infer(Action element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
+   			documentation = element.documentation
+   			for(attribute : element.parameters) {
+   				members += attribute.toField(attribute.name, attribute.type)
+   				members += attribute.toSetter(attribute.name, attribute.type)
+   				members += attribute.toGetter(attribute.name, attribute.type)
+   			}
+   		]
    	}
 }
 

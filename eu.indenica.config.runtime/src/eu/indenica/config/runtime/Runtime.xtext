@@ -39,6 +39,10 @@ ComponentElement:
 	EventRef | ActionRef
 ;
 
+GeneratedElement:
+	Event | Action
+;
+
 
 ComponentMetadata:
 	{ComponentMetadata} (('vendor' vendor=STRING)? &

@@ -3,13 +3,80 @@
  */
 package eu.indenica.config.runtime.generator
 
+import com.google.inject.Inject
+import eu.indenica.config.runtime.runtime.Action
+import eu.indenica.config.runtime.runtime.Event
+import eu.indenica.config.runtime.runtime.EventAttribute
+import eu.indenica.config.runtime.runtime.GeneratedElement
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.xtext.xbase.compiler.ImportManager
+import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
+import org.eclipse.xtext.common.types.JvmTypeReference
+import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 
 class RuntimeGenerator implements IGenerator {
+	@Inject extension IQualifiedNameProvider
+	@Inject extension TypeReferenceSerializer
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-		//TODO implement me
+//		for(e : resource.allContents.toIterable.filter(typeof(GeneratedElement))) {
+//			fsa.generateFile(
+//				"target/" + e.fullyQualifiedName.toString("/") + ".java",
+//				e.compile
+//			)
+//		}
+	}
+		
+	def compile(GeneratedElement it) '''
+		«val importManager = new ImportManager(true)»
+		«val body = body(importManager)»
+		«IF eContainer != null»
+			package «eContainer.fullyQualifiedName»;
+		«ENDIF»
+		
+		«FOR i : importManager.imports»
+			import «i»;
+		«ENDFOR»
+		
+		«body»
+	'''
+	
+	def dispatch body(GeneratedElement element, ImportManager importManager) {
+		if(true) 
+			throw new RuntimeException("Cannot compile " + element.toString())
+		""
+	}
+	
+	def dispatch body(Event it, ImportManager importManager) '''
+		public class «name» extends eu.indenica.monitoring.Event {
+			«FOR a : attributes»
+				«a.compile(importManager)»
+			«ENDFOR»
+		}
+	'''
+
+	def dispatch body(Action it, ImportManager importManager) '''
+	'''
+	
+	def compile(EventAttribute it, ImportManager importManager) '''
+		«val shortType = type.shortName(importManager)»
+		private «shortType» «name»;
+		
+		public «shortType» get«name.toFirstUpper»() {
+			return «name»; //bloooo
+		}
+		
+		public void set«name.toFirstUpper»(«shortType» «name») {
+			this.«name» = «name»;
+		}
+	'''
+	
+	def shortName(JvmTypeReference reference, ImportManager importManager) {
+		val result = new StringBuilderBasedAppendable(importManager)
+		reference.serialize(reference.eContainer, result);
+		result.toString
 	}
 }
