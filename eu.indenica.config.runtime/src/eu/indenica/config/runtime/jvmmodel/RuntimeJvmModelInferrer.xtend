@@ -48,27 +48,27 @@ class RuntimeJvmModelInferrer extends AbstractModelInferrer {
 	 *            rely on linking using the index if isPreIndexingPhase is
 	 *            <code>true</code>.
 	 */
-   	def dispatch void infer(Event element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
-   			documentation = element.documentation
-			// superTypes += Class<eu::indenica::monitoring::Event>
-   			for(attribute : element.attributes) {
-   				members += attribute.toField(attribute.name, attribute.type)
-   				members += attribute.toSetter(attribute.name, attribute.type)
-   				members += attribute.toGetter(attribute.name, attribute.type)
-   			}
-   		]
-   	}
-   	
-   	def dispatch void infer(Action element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
-   			documentation = element.documentation
-   			for(attribute : element.parameters) {
-   				members += attribute.toField(attribute.name, attribute.type)
-   				members += attribute.toSetter(attribute.name, attribute.type)
-   				members += attribute.toGetter(attribute.name, attribute.type)
-   			}
-   		]
-   	}
+//   	def dispatch void infer(Event element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+//   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
+//   			documentation = element.documentation
+//			// superTypes += Class<eu::indenica::monitoring::Event>
+//   			for(attribute : element.attributes) {
+//   				members += attribute.toField(attribute.name, attribute.type)
+//   				members += attribute.toSetter(attribute.name, attribute.type)
+//   				members += attribute.toGetter(attribute.name, attribute.type)
+//   			}
+//   		]
+//   	}
+//   	
+//   	def dispatch void infer(Action element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+//   		acceptor.accept(element.toClass(element.fullyQualifiedName)).initializeLater [
+//   			documentation = element.documentation
+//   			for(attribute : element.parameters) {
+//   				members += attribute.toField(attribute.name, attribute.type)
+//   				members += attribute.toSetter(attribute.name, attribute.type)
+//   				members += attribute.toGetter(attribute.name, attribute.type)
+//   			}
+//   		]
+//   	}
 }
 
