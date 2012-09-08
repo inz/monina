@@ -231,7 +231,7 @@ MonitoringConditionDeclaration:
 Fact:
 	'fact' name=ID? '{'
 		source=EventSourceDeclaration &
-		partitionKey=PartitionKey
+		partitionKey=PartitionKey?
 	'}'
 ;
 
