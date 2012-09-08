@@ -3,25 +3,53 @@
  */
 package eu.indenica.config.runtime.formatting;
 
+import org.eclipse.xtext.Keyword;
 import org.eclipse.xtext.formatting.impl.AbstractDeclarativeFormatter;
 import org.eclipse.xtext.formatting.impl.FormattingConfig;
+import org.eclipse.xtext.util.Pair;
+
+import eu.indenica.config.runtime.services.RuntimeGrammarAccess;
 
 /**
  * This class contains custom formatting description.
  * 
  * see : http://www.eclipse.org/Xtext/documentation/latest/xtext.html#formatting
- * on how and when to use it 
+ * on how and when to use it
  * 
- * Also see {@link org.eclipse.xtext.xtext.XtextFormattingTokenSerializer} as an example
+ * Also see {@link org.eclipse.xtext.xtext.XtextFormattingTokenSerializer} as an
+ * example
  */
 public class RuntimeFormatter extends AbstractDeclarativeFormatter {
-	
+
 	@Override
 	protected void configureFormatting(FormattingConfig c) {
-// It's usually a good idea to activate the following three statements.
-// They will add and preserve newlines around comments
-//		c.setLinewrap(0, 1, 2).before(getGrammarAccess().getSL_COMMENTRule());
-//		c.setLinewrap(0, 1, 2).before(getGrammarAccess().getML_COMMENTRule());
-//		c.setLinewrap(0, 1, 1).after(getGrammarAccess().getML_COMMENTRule());
+		RuntimeGrammarAccess f = (RuntimeGrammarAccess) getGrammarAccess();
+		c.setAutoLinewrap(80);
+
+		for(Pair<Keyword, Keyword> pair : f.findKeywordPairs("(", ")")) {
+			c.setNoSpace().after(pair.getFirst());
+			c.setNoSpace().before(pair.getSecond());
+		}
+
+		for(Keyword comma : f.findKeywords(",")) {
+			c.setNoSpace().before(comma);
+		}
+
+		for(Pair<Keyword, Keyword> pair : f.findKeywordPairs("{", "}")) {
+			Keyword leftBracket = pair.getFirst();
+			Keyword rightBracket = pair.getSecond();
+
+			c.setIndentationIncrement().after(leftBracket);
+			c.setIndentationDecrement().before(rightBracket);
+			c.setLinewrap().after(leftBracket);
+			c.setLinewrap().before(rightBracket);
+		}
+
+		// TODO: Complete formatting!
+		// (new line after statements, attributes)
+
+		c.setLinewrap(0, 1, 2).before(f.getSL_COMMENTRule());
+		c.setLinewrap(0, 1, 2).before(f.getML_COMMENTRule());
+		c.setLinewrap(0, 1, 2).after(f.getML_COMMENTRule());
 	}
 }
