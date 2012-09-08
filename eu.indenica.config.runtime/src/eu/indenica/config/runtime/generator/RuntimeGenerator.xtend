@@ -16,31 +16,34 @@ import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
+import org.eclipse.xtext.common.types.TypesFactory
 
 class RuntimeGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
 	@Inject extension TypeReferenceSerializer
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-//		for(e : resource.allContents.toIterable.filter(typeof(GeneratedElement))) {
-//			fsa.generateFile(
-//				"target/" + e.fullyQualifiedName.toString("/") + ".java",
-//				e.compile
-//			)
-//		}
+		for(e : resource.allContents.toIterable.filter(typeof(GeneratedElement))) {
+			fsa.generateFile(
+				"target/" + e.fullyQualifiedName.toString("/") + ".java",
+				e.compile
+			)
+		}
 	}
 		
 	def compile(GeneratedElement it) '''
-		«val importManager = new ImportManager(true)»
+		«val importManager = new ImportManager(true, createJvmType)»
 		«val body = body(importManager)»
 		«IF eContainer != null»
 			package «eContainer.fullyQualifiedName»;
 		«ENDIF»
-		
+
+		«IF !importManager.imports.empty»
 		«FOR i : importManager.imports»
 			import «i»;
 		«ENDFOR»
-		
+
+		«ENDIF»
 		«body»
 	'''
 	
@@ -51,7 +54,7 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def dispatch body(Event it, ImportManager importManager) '''
-		public class «name» extends eu.indenica.monitoring.Event {
+		public class «name.toFirstUpper» extends eu.indenica.monitoring.Event {
 			«FOR a : attributes»
 				«a.compile(importManager)»
 			«ENDFOR»
@@ -59,6 +62,11 @@ class RuntimeGenerator implements IGenerator {
 	'''
 
 	def dispatch body(Action it, ImportManager importManager) '''
+		public class «name.toFirstUpper» extends eu.indenica.adaptation.Action {
+			«FOR p : parameters»
+				«p.compile(importManager)»
+			«ENDFOR»
+		}
 	'''
 	
 	def compile(EventAttribute it, ImportManager importManager) '''
@@ -66,10 +74,10 @@ class RuntimeGenerator implements IGenerator {
 		private «shortType» «name»;
 		
 		public «shortType» get«name.toFirstUpper»() {
-			return «name»; //bloooo
+			return «name»;
 		}
 		
-		public void set«name.toFirstUpper»(«shortType» «name») {
+		public void set«name.toFirstUpper»(final «shortType» «name») {
 			this.«name» = «name»;
 		}
 	'''
@@ -79,4 +87,26 @@ class RuntimeGenerator implements IGenerator {
 		reference.serialize(reference.eContainer, result);
 		result.toString
 	}
+	
+	def createJvmType(GeneratedElement element) {
+		createJvmType(
+			element.eContainer.fullyQualifiedName.toString, 
+			element.name
+		)
+	}
+	
+	def createJvmType(String packageName, String className) {
+	    val declaredType = TypesFactory::eINSTANCE.createJvmGenericType
+	    declaredType.setSimpleName(className)
+	    declaredType.setPackageName(packageName)
+	    declaredType
+	}	
+	def dispatch name(GeneratedElement element) {
+		if(true) 
+			throw new RuntimeException("Can't get name for " + element.toString);
+		""
+	}
+	def dispatch name(Event e) { e.name }
+	def dispatch name(Action a) { a.name }
+
 }
