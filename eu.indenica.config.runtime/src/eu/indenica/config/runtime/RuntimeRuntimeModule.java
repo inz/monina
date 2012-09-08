@@ -11,18 +11,19 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
+import org.eclipse.xtext.generator.IGenerator;
 import org.eclipse.xtext.resource.containers.FlatResourceSetBasedAllContainersState;
 import org.eclipse.xtext.resource.containers.IAllContainersState;
 import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateProvider;
 import org.eclipse.xtext.scoping.IScopeProvider;
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
 import org.eclipse.xtext.xbase.scoping.XbaseImportedNamespaceScopeProvider;
-import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Binder;
 import com.google.inject.name.Names;
 
+import eu.indenica.config.runtime.generator.RuntimeGenerator;
 import eu.indenica.config.runtime.scoping.RuntimeDeclarativeScopeProvider;
 import eu.indenica.config.runtime.scoping.RuntimeXbaseScopeProvider;
 
@@ -30,6 +31,7 @@ import eu.indenica.config.runtime.scoping.RuntimeXbaseScopeProvider;
  * Use this class to register components to be used at runtime / without the
  * Equinox extension registry.
  */
+@SuppressWarnings("restriction")
 public class RuntimeRuntimeModule extends
 		eu.indenica.config.runtime.AbstractRuntimeRuntimeModule {
 	/*
@@ -102,4 +104,12 @@ public class RuntimeRuntimeModule extends
 		}
 	}
 	/* ENDFIX */
+	
+	/* (non-Javadoc)
+	 * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIGenerator()
+	 */
+	@Override
+	public Class<? extends IGenerator> bindIGenerator() {
+		return RuntimeGenerator.class;
+	}
 }
