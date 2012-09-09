@@ -91,7 +91,7 @@ HostRef:
 ;
 
 HostAddress:
-	address=STRING
+	'address' address=STRING
 //	fqdn=Fqdn | ipv4=IPV4_ADDRESS | ipv6=IPV6_ADDRESS
 ;
 

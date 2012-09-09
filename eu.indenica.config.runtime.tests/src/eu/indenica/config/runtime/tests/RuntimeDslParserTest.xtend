@@ -81,7 +81,7 @@ class RuntimeDslParserTest {
 			}
 			
 			host hostOne {
-				"one"
+				address "one"
 			}
 			
 			component sOne {
