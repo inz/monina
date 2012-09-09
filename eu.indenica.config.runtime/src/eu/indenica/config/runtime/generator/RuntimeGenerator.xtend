@@ -5,33 +5,51 @@ package eu.indenica.config.runtime.generator
 
 import com.google.inject.Inject
 import eu.indenica.config.runtime.runtime.Action
+import eu.indenica.config.runtime.runtime.CodeElement
+import eu.indenica.config.runtime.runtime.CompositeElement
 import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
-import eu.indenica.config.runtime.runtime.GeneratedElement
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.common.types.JvmTypeReference
+import org.eclipse.xtext.common.types.TypesFactory
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.compiler.ImportManager
-import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
-import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
-import org.eclipse.xtext.common.types.TypesFactory
+import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
+import eu.indenica.config.runtime.runtime.MonitoringQuery
+import eu.indenica.config.runtime.runtime.AdaptationRule
+import eu.indenica.config.runtime.runtime.Fact
 
 class RuntimeGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
 	@Inject extension TypeReferenceSerializer
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-		for(e : resource.allContents.toIterable.filter(typeof(GeneratedElement))) {
+		for(e : resource.allContents.toIterable.filter(typeof(CodeElement))) {
 			fsa.generateFile(
-				"target/" + e.fullyQualifiedName.toString("/") + ".java",
+				e.fullyQualifiedName.toString("/") + ".java",
+				e.compile
+			)
+		}
+		
+		// TODO: Add generation of composite files!
+		// generate composites for each asset.
+		// then, in 'deploy,' copy artifacts to appropriate location,
+		// package and start it.
+		for(e : resource.allContents.toIterable.filter(typeof(CompositeElement))) {
+			fsa.generateFile(
+				e.fullyQualifiedName.toString + ".composite",
 				e.compile
 			)
 		}
 	}
-		
-	def compile(GeneratedElement it) '''
+	
+	/**
+	 * Java code assets.
+	 */		
+	def compile(CodeElement it) '''
 		«val importManager = new ImportManager(true, createJvmType)»
 		«val body = body(importManager)»
 		«IF eContainer != null»
@@ -47,9 +65,8 @@ class RuntimeGenerator implements IGenerator {
 		«body»
 	'''
 	
-	def dispatch body(GeneratedElement element, ImportManager importManager) {
-		if(true) 
-			throw new RuntimeException("Cannot compile " + element.toString())
+	def dispatch body(CodeElement it, ImportManager importManager) {
+		if(true) throw new RuntimeException("Cannot compile " + toString)
 		""
 	}
 	
@@ -82,13 +99,59 @@ class RuntimeGenerator implements IGenerator {
 		}
 	'''
 	
+	/**
+	 * Composite file assets
+	 */
+	
+	def tuscanyVersion() {
+		return 1;
+	}
+	 
+	def compile(CompositeElement it) '''
+		<?xml version="1.0" encoding="UTF-8"?>
+		«IF tuscanyVersion == 1»
+		<composite xmlns="http://www.osoa.org/xmlns/sca/1.0"
+		«ELSEIF tuscanyVersion == 2»
+		<composite xmlns="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+		           xmlns:tuscany="http://tuscany.apache.org/xmlns/sca/1.1"
+		«ENDIF»
+		           targetNamespace="http://indenica.eu"
+		           name="«name.toFirstLower»-contribution">
+			<component name="«name.toFirstUpper»">
+				«body»
+			</component>
+		</composite>
+	'''
+
+	def dispatch body(CompositeElement it) {
+		if(true) throw new RuntimeException("Cannot compile " + toString)
+		""
+	}
+	
+	def dispatch body(MonitoringQuery it) '''
+		<implementation.java class="eu.indenica.monitoring.???MonitoringQuery" />
+		<property name="statement">
+			«it»
+		</property>
+	'''
+	
+	def dispatch body(AdaptationRule it) '''
+		<implementation.java class="eu.indenica.monitoring.???AdaptationRule" />
+		<propery name="statement">
+			«it»
+		</property>
+	'''
+
+	/**
+	 * Utility methods
+	 */
 	def shortName(JvmTypeReference reference, ImportManager importManager) {
 		val result = new StringBuilderBasedAppendable(importManager)
 		reference.serialize(reference.eContainer, result);
 		result.toString
 	}
 	
-	def createJvmType(GeneratedElement element) {
+	def createJvmType(CodeElement element) {
 		createJvmType(
 			element.eContainer.fullyQualifiedName.toString, 
 			element.name
@@ -101,12 +164,18 @@ class RuntimeGenerator implements IGenerator {
 	    declaredType.setPackageName(packageName)
 	    declaredType
 	}	
-	def dispatch name(GeneratedElement element) {
-		if(true) 
-			throw new RuntimeException("Can't get name for " + element.toString);
+	def dispatch name(CodeElement it) {
+		if(true) throw new RuntimeException("Can't get name for " + toString);
 		""
 	}
 	def dispatch name(Event e) { e.name }
 	def dispatch name(Action a) { a.name }
 
+	def dispatch name(CompositeElement it) {
+		if(true) throw new RuntimeException("Can't get name for " + toString);
+		""
+	}
+	def dispatch name(MonitoringQuery it) { name }
+	def dispatch name(AdaptationRule it) { name }
+	def dispatch name(Fact it) { name }
 }

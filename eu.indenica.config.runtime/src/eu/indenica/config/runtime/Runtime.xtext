@@ -39,14 +39,20 @@ ComponentElement:
 	EventRef | ActionRef
 ;
 
-GeneratedElement:
+CodeElement:
 	Event | Action
+;
+
+CompositeElement:
+	MonitoringQuery | Fact | AdaptationRule
 ;
 
 
 ComponentMetadata:
-	{ComponentMetadata} (('vendor' vendor=STRING)? &
-	('version' version=STRING)?)
+	{ComponentMetadata} (
+		('vendor' vendor=STRING)? // &
+		('version' version=STRING)?
+	)
 ;
 
 Event:
@@ -230,7 +236,7 @@ MonitoringConditionDeclaration:
 
 Fact:
 	'fact' name=ID? '{'
-		source=EventSourceDeclaration &
+		source=EventSourceDeclaration // &
 		partitionKey=PartitionKey?
 	'}'
 ;
