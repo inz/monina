@@ -10,6 +10,7 @@ import eu.indenica.config.runtime.runtime.CompareOperator
 import eu.indenica.config.runtime.runtime.Component
 import eu.indenica.config.runtime.runtime.ComponentElement
 import eu.indenica.config.runtime.runtime.ConditionalExpression
+import eu.indenica.config.runtime.runtime.EsperMonitoringQuery
 import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration
@@ -17,6 +18,7 @@ import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.EventSource
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration
 import eu.indenica.config.runtime.runtime.FeatureCall
+import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 import eu.indenica.config.runtime.runtime.MonitoringConditionDeclaration
 import eu.indenica.config.runtime.runtime.MonitoringQuery
 import eu.indenica.config.runtime.runtime.NumberLiteral
@@ -62,21 +64,21 @@ class RuntimeDslParserTest {
 	
 	def String sampleModel() {
 				'''
-			event eventOne {
+			event EventOne {
 				attr1 : String
 			}
 
-			event eventTwo {
+			event EventTwo {
 				attr2 : String
 			}
 			
-			event eventThree {
+			event EventThree {
 				attr3 : String
 				attrThree : String
 				attributeThree : String
 			}
 			
-			action actionOne {
+			action ActionOne {
 				attr1 : String
 			}
 			
@@ -85,38 +87,38 @@ class RuntimeDslParserTest {
 			}
 			
 			component sOne {
-				event eventOne
+				event EventOne
 				host hostOne
 			}
 			
 			component sTwo {
-				event eventOne
-				event eventTwo
-				action actionOne
+				event EventOne
+				event EventTwo
+				action ActionOne
 			}
 			
 			query ruleOne {
-				emit eventThree(attr1 * 987 as attr3)
-				from source sOne, sTwo event eventOne as event1
+				emit EventThree(attr1 * 987 as attr3)
+				from source sOne, sTwo event EventOne as event1
 				window 10s
 				where -2 > attr1
 			}
 			
 			query ruleTwo {
-				from sources sOne, sTwo events eventTwo, eventOne
-				from source sTwo event eventTwo
-				emit eventThree(1234 * 2453 as attrThree)
+				from sources sOne, sTwo events EventTwo, EventOne
+				from source sTwo event EventTwo
+				emit EventThree(1234 * 2453 as attrThree)
 				window 500
 			}
 			
 			fact factOne {
-				from source ruleTwo event eventThree
+				from source ruleTwo event EventThree
 				by attributeThree
 			}
 			
 			rule ruleOne {
 				from factOne
-				when eventThree.attr3 = 4 then sTwo actionOne
+				when EventThree.attr3 = 4 then sTwo ActionOne
 			}
 		'''
 	}
@@ -158,13 +160,18 @@ class RuntimeDslParserTest {
 		println("  action ref " + ref.action.name)
 	}
 	
-	def dispatch void print(MonitoringQuery query) {
+	def dispatch void print(IndenicaMonitoringQuery query) {
 		println("query " + query.name)
 		for(s : query.sources) s.print
 		println()
 		for(e : query.emits) e.print
 		query.window?.print
 		query.condition?.print
+	}
+	
+	def dispatch void print(EsperMonitoringQuery it) {
+		println("esper query " + name)
+		println("  " + statement)
 	}
 	
 	def dispatch void print(WindowDeclaration declaration) { 
@@ -237,7 +244,8 @@ class RuntimeDslParserTest {
 		print(source.sources.map[s |
 			switch s { 
 				Component: (s as Component).name
-			    MonitoringQuery: (s as MonitoringQuery).name
+			    IndenicaMonitoringQuery: (s as IndenicaMonitoringQuery).name
+			    EsperMonitoringQuery: (s as EsperMonitoringQuery).name
 			    default: s.getClass().getSimpleName()
 			}
 		].join(", "))

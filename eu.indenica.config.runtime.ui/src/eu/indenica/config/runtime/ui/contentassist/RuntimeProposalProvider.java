@@ -3,7 +3,6 @@
 */
 package eu.indenica.config.runtime.ui.contentassist;
 
-import eu.indenica.config.runtime.ui.contentassist.AbstractRuntimeProposalProvider;
 /**
  * see http://www.eclipse.org/Xtext/documentation/latest/xtext.html#contentAssist on how to customize content assistant
  */

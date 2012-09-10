@@ -9,8 +9,9 @@ RuntimeModel:
 ;
  
 AbstractElement:
-  Import | Event | Action | Component | MonitoringQuery | Fact | Host | 
-  AdaptationRule | PackageDeclaration
+  Import | Event | Action | Component | IndenicaMonitoringQuery |
+  EsperMonitoringQuery | 
+  Fact | Host | AdaptationRule | PackageDeclaration
 ;
 
 PackageDeclaration:
@@ -32,6 +33,7 @@ Component:
 //			emits+=EventRef
 //		)*
 		host=HostRef?
+		endpointAddress=EndpointAddress?
 	'}'
 ;
 
@@ -44,7 +46,7 @@ CodeElement:
 ;
 
 CompositeElement:
-	MonitoringQuery | Fact | AdaptationRule
+	MonitoringQuery | /* Fact | */ AdaptationRule
 ;
 
 
@@ -87,13 +89,12 @@ EventAttribute:
 Host:
 	'host' name=ID '{'
 		address=HostAddress?
-		endpointAddress=EndpointAddress?
 		capacity=HostCapacity?
 	'}'
 ;
 
 HostRef:
-	'host' name=[Host | QualifiedName]
+	'host' host=[Host | QualifiedName]
 ;
 
 HostAddress:
@@ -151,8 +152,12 @@ HostCapacity:
 EndpointAddress:
 	'endpoint' endpointAddress=STRING
 ;
- 
+
 MonitoringQuery:
+	IndenicaMonitoringQuery | EsperMonitoringQuery
+;
+ 
+IndenicaMonitoringQuery:
   'query' name=ID '{'
   	(
 		sources+=EventSourceDeclaration |
@@ -163,6 +168,13 @@ MonitoringQuery:
 	cost=Cost?
 	ratio=IoRatio?
   '}'
+;
+
+EsperMonitoringQuery:
+	'equery' name=ID '{'
+		(sources+=EventSourceDeclaration)+
+		statement=STRING
+	'}'
 ;
 
 EventMetaRef:

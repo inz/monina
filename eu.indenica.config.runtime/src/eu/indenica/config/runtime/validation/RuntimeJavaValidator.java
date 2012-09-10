@@ -2,32 +2,54 @@ package eu.indenica.config.runtime.validation;
 
 import org.eclipse.xtext.validation.Check;
 
-import eu.indenica.config.runtime.runtime.MonitoringQuery;
+import eu.indenica.config.runtime.runtime.Action;
+import eu.indenica.config.runtime.runtime.EsperMonitoringQuery;
+import eu.indenica.config.runtime.runtime.Event;
+import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
 import eu.indenica.config.runtime.runtime.RuntimePackage;
 
 public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 
-	// @Check
-	// public void checkGreetingStartsWithCapital(Greeting greeting) {
-	// if (!Character.isUpperCase(greeting.getName().charAt(0))) {
-	// warning("Name should start with a capital",
-	// MyDslPackage.Literals.GREETING__NAME);
-	// }
-	// }
-
 	@Check
-	public void checkMonitoringRuleHasSource(MonitoringQuery monitoringRule) {
-		if(monitoringRule.getSources().isEmpty()) {
-			error("Monitoring rule must have at least one source",
-					RuntimePackage.Literals.MONITORING_QUERY__SOURCES);
+	public void checkEventStartsWithCapital(Event event) {
+		if(!Character.isUpperCase(event.getName().charAt(0))) {
+			error("Name must start with a capital",
+					RuntimePackage.Literals.EVENT__NAME);
 		}
 	}
 	
 	@Check
-	public void checkMonitoringRuleHasEmit(MonitoringQuery monitoringRule) {
+	public void checkActionStartsWithCapital(Action action) {
+		if(!Character.isUpperCase(action.getName().charAt(0))) {
+			error("Name must start with a capital",
+					RuntimePackage.Literals.ACTION__NAME);
+		}
+	}
+
+	@Check
+	public void checkMonitoringRuleHasSource(
+			IndenicaMonitoringQuery monitoringRule) {
+		if(monitoringRule.getSources().isEmpty()) {
+			error("Monitoring rule must have at least one source",
+					RuntimePackage.Literals.INDENICA_MONITORING_QUERY__SOURCES);
+		}
+	}
+
+	@Check
+	public void
+			checkMonitoringRuleHasSource(EsperMonitoringQuery monitoringRule) {
+		if(monitoringRule.getSources().isEmpty()) {
+			error("Monitoring rule must have at least one source",
+					RuntimePackage.Literals.ESPER_MONITORING_QUERY__SOURCES);
+		}
+	}
+
+	@Check
+	public void checkMonitoringRuleHasEmit(
+			IndenicaMonitoringQuery monitoringRule) {
 		if(monitoringRule.getEmits().isEmpty()) {
 			error("Monitoring rule must emit at least one event",
-					RuntimePackage.Literals.MONITORING_QUERY__EMITS);
+					RuntimePackage.Literals.INDENICA_MONITORING_QUERY__EMITS);
 		}
 	}
 }

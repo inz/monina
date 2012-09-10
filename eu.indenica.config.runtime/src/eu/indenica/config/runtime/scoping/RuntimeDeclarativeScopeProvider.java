@@ -20,7 +20,7 @@ import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.EventSource;
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration;
 import eu.indenica.config.runtime.runtime.Fact;
-import eu.indenica.config.runtime.runtime.MonitoringQuery;
+import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
 
 /**
  * This class contains custom scoping description.
@@ -66,7 +66,7 @@ public class RuntimeDeclarativeScopeProvider extends AbstractDeclarativeScopePro
 	 * @return a scope containing all valid event attributes
 	 */
 	IScope scope_EventAttribute(
-			final MonitoringQuery ctx, final EReference ref) {
+			final IndenicaMonitoringQuery ctx, final EReference ref) {
 		Collection<EObject> elements = Lists.newArrayList();
 		Collection<EventSource> sources = Lists.newArrayList();
 
