@@ -3,6 +3,7 @@ package eu.indenica.config.runtime.validation;
 import org.eclipse.xtext.validation.Check;
 
 import eu.indenica.config.runtime.runtime.Action;
+import eu.indenica.config.runtime.runtime.Component;
 import eu.indenica.config.runtime.runtime.EsperMonitoringQuery;
 import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
@@ -23,6 +24,14 @@ public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 		if(!Character.isUpperCase(action.getName().charAt(0))) {
 			error("Name must start with a capital",
 					RuntimePackage.Literals.ACTION__NAME);
+		}
+	}
+	
+	@Check
+	public void checkComponentStartsWithCapital(Component component) {
+		if(!Character.isUpperCase(component.getName().charAt(0))) {
+			error("Name must start with a capital",
+					RuntimePackage.Literals.COMPONENT__NAME);
 		}
 	}
 
