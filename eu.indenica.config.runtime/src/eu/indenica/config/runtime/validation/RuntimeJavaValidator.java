@@ -4,9 +4,9 @@ import org.eclipse.xtext.validation.Check;
 
 import eu.indenica.config.runtime.runtime.Action;
 import eu.indenica.config.runtime.runtime.Component;
-import eu.indenica.config.runtime.runtime.EsperMonitoringQuery;
 import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
+import eu.indenica.config.runtime.runtime.MonitoringQuery;
 import eu.indenica.config.runtime.runtime.RuntimePackage;
 
 public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
@@ -37,21 +37,21 @@ public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 
 	@Check
 	public void checkMonitoringRuleHasSource(
-			IndenicaMonitoringQuery monitoringRule) {
+			MonitoringQuery monitoringRule) {
 		if(monitoringRule.getSources().isEmpty()) {
 			error("Monitoring rule must have at least one source",
-					RuntimePackage.Literals.INDENICA_MONITORING_QUERY__SOURCES);
+					RuntimePackage.Literals.MONITORING_QUERY__SOURCES);
 		}
 	}
 
-	@Check
-	public void
-			checkMonitoringRuleHasSource(EsperMonitoringQuery monitoringRule) {
-		if(monitoringRule.getSources().isEmpty()) {
-			error("Monitoring rule must have at least one source",
-					RuntimePackage.Literals.ESPER_MONITORING_QUERY__SOURCES);
-		}
-	}
+//	@Check
+//	public void
+//			checkMonitoringRuleHasSource(EsperMonitoringQuery monitoringRule) {
+//		if(monitoringRule.getSources().isEmpty()) {
+//			error("Monitoring rule must have at least one source",
+//					RuntimePackage.Literals.ESPER_MONITORING_QUERY__SOURCES);
+//		}
+//	}
 
 	@Check
 	public void checkMonitoringRuleHasEmit(

@@ -6,16 +6,17 @@ package eu.indenica.config.runtime.generator
 import com.google.common.collect.Lists
 import com.google.inject.Inject
 import eu.indenica.config.runtime.runtime.Action
+import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.AdaptationRule
 import eu.indenica.config.runtime.runtime.CodeElement
-import eu.indenica.config.runtime.runtime.CompositeElement
+import eu.indenica.config.runtime.runtime.Component
 import eu.indenica.config.runtime.runtime.EsperMonitoringQuery
 import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
+import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.Fact
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 import eu.indenica.config.runtime.runtime.MonitoringQuery
-import eu.indenica.monitoring.esper.EsperMonitoringEngine
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.common.types.TypesFactory
@@ -25,9 +26,6 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
-import eu.indenica.config.runtime.runtime.Component
-import eu.indenica.config.runtime.runtime.ActionRef
-import eu.indenica.config.runtime.runtime.EventRef
 
 class RuntimeGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
@@ -47,15 +45,25 @@ class RuntimeGenerator implements IGenerator {
 				e.fullyQualifiedName.toString("/") + "ActionEvent.java",
 				e.compileActionEvent
 			)
+
+			if(e.generateClient) {
+				fsa.generateFile(
+					"clients/" + e.name + "/" + e.name + "EventEmitter.java",
+					e.compileClientEmitter
+				)				
+				fsa.generateFile(
+					"clients/" + e.name + "/" + e.name + "ActionReceiver.java",
+					e.compileActionReceiver
+				)
+				fsa.generateFile(
+					"clients/" + e.name + "/" + e.name + "client.composite",
+					e.compileClientComposite
+				)
+			}
 		}
 		
-		// Generate composite artifacts
-//		for(e : resource.allContents.toIterable.filter(typeof(CompositeElement))) {
-//			fsa.generateFile(
-//				e.fullyQualifiedName.toString + ".composite",
-//				e.compile
-//			)
-//		}
+		// TODO: Generate client composite and Launcher.
+		
 		
 		// Generate infrastructure composite
 		val queries = Lists::newArrayList(resource.allContents.toIterable.filter(typeof(MonitoringQuery)))
@@ -136,40 +144,49 @@ class RuntimeGenerator implements IGenerator {
 	def dispatch body(Component it, ImportManager importManager) '''
 		«val eventClasses = elements.filter(typeof(EventRef)).map[e | e.event].map[e | e.fullyQualifiedName.toString + ".class"]»
 		«val actionClasses = elements.filter(typeof(ActionRef)).map[a | a.action].map[e | e.fullyQualifiedName.toString + ".class"]»
-		@javax.xml.bind.annotation.XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
-		public class «name.toFirstUpper» 
-			implements eu.indenica.common.EventListener,
-					   eu.indenica.common.RuntimeComponent {
-			private eu.indenica.common.PubSub pubSub = 
-				eu.indenica.common.PubSubFactory.getPubSub();
+		import eu.indenica.common.EventListener;
+		import eu.indenica.common.RuntimeComponent;
+		import eu.indenica.common.PubSub;
+		import eu.indenica.common.PubSubFactory;
+		import eu.indenica.events.Event;
+		import eu.indenica.events.ActionEvent;
+		import eu.indenica.integration.AdaptationInterface;
+		import eu.indenica.integration.EventReceiver;
+		
+		import org.osoa.sca.annotations.Reference;
+		import org.osoa.sca.annotations.Init;
+		import org.osoa.sca.annotations.Destroy;
+		
+		import javax.xml.bind.annotation.XmlSeeAlso;
+		
+		@XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
+		public class «name» implements EventReceiver, EventListener, RuntimeComponent {
+			private PubSub pubSub = PubSubFactory.getPubSub();
 			
-			private eu.indenica.integration.AdaptationInterface adaptationInterface;
+			private AdaptationInterface adaptationInterface;
 			
-			@org.osoa.sca.annotations.Reference
-			public void setAdaptationInterface(
-				eu.indenica.integration.AdaptationInterface adaptationInterface) {
+			@Reference
+			public void setAdaptationInterface(AdaptationInterface adaptationInterface) {
 				this.adaptationInterface = adaptationInterface;
 			}
 			
-			@org.osoa.sca.annotations.Init
+			@Init
 			public void init() {
-				pubSub.registerListener(this, null, "«name.toFirstUpper»_action");
+				pubSub.registerListener(this, null, "«name»_action");
 				adaptationInterface.registerCallback();
 			}
 			
-			@org.osoa.sca.annotations.Destroy
+			@Destroy
 			public void destroy() {
 				// Maybe de-register callback at component?
 			}
 			
-			public void eventReceived(
-				eu.indenica.common.RuntimeComponent source, eu.indenica.events.Event event) {
-				adaptationInterface.performAction(
-					((eu.indenica.events.ActionEvent) event).getAction());
+			public void eventReceived(RuntimeComponent source, Event event) {
+				adaptationInterface.performAction(((ActionEvent) event).getAction());
 			}
 			
 			// receiveEvent dispatch for all event types.
-			public void receiveEvent(eu.indenica.events.Event event) {
+			public void receiveEvent(Event event) {
 				pubSub.publish(this, event);
 			}
 		}
@@ -192,10 +209,13 @@ class RuntimeGenerator implements IGenerator {
 	'''
 	
 	def componentActionEventBody(Component it, ImportManager manager) '''
-		public class «name.toFirstUpper»ActionEvent extends eu.indenica.events.ActionEvent {
-			public «name.toFirstUpper»ActionEvent(final eu.indenica.adaptation.Action action) {
+		import eu.indenica.adaptation.Action;
+		import eu.indenica.events.ActionEvent;
+		
+		public class «name»ActionEvent extends ActionEvent {
+			public «name»ActionEvent(final Action action) {
 				super(action);
-				eventType = "«name.toFirstUpper»_action";
+				eventType = "«name»_action";
 			}
 		}
 	'''
@@ -207,27 +227,27 @@ class RuntimeGenerator implements IGenerator {
 	 */
 
 	 
-	def compile(CompositeElement it) '''
-		«compositeHeader(name)»
-			<component name="«name.toFirstUpper»">
-				«body»
-			</component>
-		</composite>
-	'''
-
-	def dispatch body(MonitoringQuery it) '''
-		<implementation.java class="eu.indenica.monitoring.MonitoringQueryImpl" />
-		<property name="statement">
-			«new EsperMonitoringQueryConverter().convert(it)»
-		</property>
-	'''
-	
-	def dispatch body(AdaptationRule it) '''
-		<implementation.java class="eu.indenica.monitoring.AdaptationRuleImpl" />
-		<propery name="statement">
-			«it»
-		</property>
-	'''
+//	def compile(CompositeElement it) '''
+//		«compositeHeader(name)»
+//			<component name="«name.toFirstUpper»">
+//				«body»
+//			</component>
+//		</composite>
+//	'''
+//
+//	def dispatch body(MonitoringQuery it) '''
+//		<implementation.java class="eu.indenica.monitoring.MonitoringQueryImpl" />
+//		<property name="statement">
+//			«new EsperMonitoringQueryConverter().convert(it)»
+//		</property>
+//	'''
+//	
+//	def dispatch body(AdaptationRule it) '''
+//		<implementation.java class="eu.indenica.monitoring.AdaptationRuleImpl" />
+//		<propery name="statement">
+//			«it»
+//		</property>
+//	'''
 	
 	/**
 	 * Runtime Composite
@@ -266,10 +286,14 @@ class RuntimeGenerator implements IGenerator {
 	def componentDefinition(Component it) '''
 		<component name="«name»">
 			<implementation.java class="«fullyQualifiedName»" />
-			<service name="«name»">
+			<service name="EventReceiver">
+				<interface.java interface="eu.indenica.integration.EventReceiver" />
 				<binding.ws />
 			</service>
-			<reference name="adaptationInterface" target="«host.host.address.address + endpointAddress.endpointAddress»" />
+			<reference name="adaptationInterface">
+				<interface.java interface="eu.indenica.integration.AdaptationInterface" />
+				<binding.ws uri="«host.host.address.address + endpointAddress.endpointAddress»" />
+			</reference>
 		</component>
 	'''
 
@@ -301,7 +325,91 @@ class RuntimeGenerator implements IGenerator {
 	def compileProperty(AdaptationRule rule) { }
 
 
-	 
+	/**
+	 * Component client generation
+	 */
+    def compileClientEmitter(Component it) '''
+		«val importManager = new ImportManager(true)»
+		«val body = componentClientEmitterBody(importManager)»
+«««		«IF eContainer != null»
+«««			package «eContainer.fullyQualifiedName»;
+«««		«ENDIF»
+
+		«IF !importManager.imports.empty»
+		«FOR i : importManager.imports»
+			import «i»;
+		«ENDFOR»
+
+		«ENDIF»
+		«body»
+    '''
+    
+    def compileActionReceiver(Component it) '''
+		«val importManager = new ImportManager(true)»
+		«val body = componentActionReceiverBody(importManager)»
+«««		«IF eContainer != null»
+«««			package «eContainer.fullyQualifiedName»;
+«««		«ENDIF»
+
+		«IF !importManager.imports.empty»
+		«FOR i : importManager.imports»
+			import «i»;
+		«ENDFOR»
+
+		«ENDIF»
+		«body»
+    '''
+    
+    def compileClientComposite(Component it) '''
+    	«compositeHeader(name + "_client")»
+    		<component name="EventEmitter">
+    			<implementation.java class="«name»EventReceiver" />
+    			<reference name="monitoringInterface">
+    				<interface.java interface="eu.indenica.integration.EventReceiver" />
+    				<binding.ws uri="server-uri" />
+    			</reference>
+    		</component>
+    		
+    		<component name="ActionReceiver">
+    			<implementation.java class="«name»ActionReceiver" />
+    			<service name="AdaptationInterface">
+    				<binding.ws uri="«host.host.address.address + endpointAddress.endpointAddress»" />
+    			</service>
+    		</component>
+    	</composite>
+    '''
+    
+    def componentClientEmitterBody(Component it, ImportManager importManager) '''
+    	import eu.indenica.integration.EventReceiver;
+    	import eu.indenica.events.Event;
+    	import org.osoa.sca.annotations.Reference;
+    
+    	public class «name»EventEmitter {
+    		private EventReceiver monitoringInterface;
+    		
+    		@Reference
+    		public setEventReceiver(EventReceiver monitoringInterface) {
+    			this.monitoringInterface = monitoringInterface;
+    		}
+    		
+    		public sendEvent(Event event) {
+    			monitoringInterface.receiveEvent(event);
+    		}
+    	}
+    '''
+	
+	def componentActionReceiverBody(Component it, ImportManager importManager) '''
+		import eu.indenica.integration.AdaptationInterface;
+		import eu.indenica.adaptation.Action;
+		
+		public class «name»ActionReceiver implements AdaptationInterface {
+			public void performAction(Action action) {
+				System.out.println("Performing action: " + action.toString());
+			}
+			
+			public void registerCallback() {}
+		}
+	''' 
 
 	/**
 	 * Utility methods
@@ -353,10 +461,6 @@ class RuntimeGenerator implements IGenerator {
 	def dispatch name(Event it) { name }
 	def dispatch name(Action it) { name }
 
-	def dispatch name(CompositeElement it) {
-		if(true) throw new RuntimeException("Can't get name for " + toString);
-		""
-	}
 	def dispatch name(IndenicaMonitoringQuery it) { name }
 	def dispatch name(EsperMonitoringQuery it) { name }
 	def dispatch name(AdaptationRule it) { name }

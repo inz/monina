@@ -9,8 +9,7 @@ RuntimeModel:
 ;
  
 AbstractElement:
-  Import | Event | Action | Component | IndenicaMonitoringQuery |
-  EsperMonitoringQuery | 
+  Import | Event | Action | Component | MonitoringQuery |
   Fact | Host | AdaptationRule | PackageDeclaration
 ;
 
@@ -34,6 +33,7 @@ Component:
 //		)*
 		host=HostRef?
 		endpointAddress=EndpointAddress?
+		generateClient?='generate client'?
 	'}'
 ;
 
@@ -45,9 +45,9 @@ CodeElement:
 	Event | Action | Component
 ;
 
-CompositeElement:
-	MonitoringQuery | /* Fact | */ AdaptationRule
-;
+//CompositeElement:
+//	MonitoringQuery | /* Fact | */ AdaptationRule
+//;
 
 
 ComponentMetadata:
@@ -263,10 +263,21 @@ AttributeAssignment:
 ;
 
 AdaptationRule:
+	IndenicaAdaptationRule | DroolsAdaptationRule
+;
+
+IndenicaAdaptationRule:
 	'rule' name=ID '{'
 		sources+=AdaptationRuleSource+
 		stmts+=AdaptationStatement+
 		cost=Cost?
+	'}'
+;
+
+DroolsAdaptationRule:
+	'drule' name=ID '{'
+		sources+=AdaptationRuleSource+
+		statement=STRING
 	'}'
 ;
 
