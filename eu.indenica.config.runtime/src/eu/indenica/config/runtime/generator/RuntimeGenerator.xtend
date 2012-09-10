@@ -26,6 +26,8 @@ import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
 import eu.indenica.config.runtime.runtime.Component
+import eu.indenica.config.runtime.runtime.ActionRef
+import eu.indenica.config.runtime.runtime.EventRef
 
 class RuntimeGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
@@ -132,19 +134,20 @@ class RuntimeGenerator implements IGenerator {
 	'''
 	
 	def dispatch body(Component it, ImportManager importManager) '''
-		«val relatedClasses = elements.map[e | e.fullyQualifiedName]»
-		@javax.xml.bind.annotation.XmlSeeAlso({«relatedClasses.join(", ")»})
+		«val eventClasses = elements.filter(typeof(EventRef)).map[e | e.event].map[e | e.fullyQualifiedName.toString + ".class"]»
+		«val actionClasses = elements.filter(typeof(ActionRef)).map[a | a.action].map[e | e.fullyQualifiedName.toString + ".class"]»
+		@javax.xml.bind.annotation.XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
 		public class «name.toFirstUpper» 
-			implements eu.indenica.common.EventListener {
+			implements eu.indenica.common.EventListener,
+					   eu.indenica.common.RuntimeComponent {
 			private eu.indenica.common.PubSub pubSub = 
 				eu.indenica.common.PubSubFactory.getPubSub();
 			
-			// Reference to endpoint for executing actions.
 			private eu.indenica.integration.AdaptationInterface adaptationInterface;
 			
 			@org.osoa.sca.annotations.Reference
 			public void setAdaptationInterface(
-				AdaptationInterface adaptationInterface) {
+				eu.indenica.integration.AdaptationInterface adaptationInterface) {
 				this.adaptationInterface = adaptationInterface;
 			}
 			
@@ -154,12 +157,19 @@ class RuntimeGenerator implements IGenerator {
 				adaptationInterface.registerCallback();
 			}
 			
-			public void eventReceived(RuntimeComponent source, Event event) {
-				adaptationInterface.performAction(((ActionEvent) event).getAction());
+			@org.osoa.sca.annotations.Destroy
+			public void destroy() {
+				// Maybe de-register callback at component?
+			}
+			
+			public void eventReceived(
+				eu.indenica.common.RuntimeComponent source, eu.indenica.events.Event event) {
+				adaptationInterface.performAction(
+					((eu.indenica.events.ActionEvent) event).getAction());
 			}
 			
 			// receiveEvent dispatch for all event types.
-			public void receiveEvent(eu.indenica.monitoring.Event event) {
+			public void receiveEvent(eu.indenica.events.Event event) {
 				pubSub.publish(this, event);
 			}
 		}
@@ -183,7 +193,7 @@ class RuntimeGenerator implements IGenerator {
 	
 	def componentActionEventBody(Component it, ImportManager manager) '''
 		public class «name.toFirstUpper»ActionEvent extends eu.indenica.events.ActionEvent {
-			public «name.toFirstUpper»ActionEvent(final Action action) {
+			public «name.toFirstUpper»ActionEvent(final eu.indenica.adaptation.Action action) {
 				super(action);
 				eventType = "«name.toFirstUpper»_action";
 			}
@@ -259,7 +269,7 @@ class RuntimeGenerator implements IGenerator {
 			<service name="«name»">
 				<binding.ws />
 			</service>
-			<reference name="adaptationInterface" target="«host.host.address + endpointAddress.endpointAddress»" />
+			<reference name="adaptationInterface" target="«host.host.address.address + endpointAddress.endpointAddress»" />
 		</component>
 	'''
 

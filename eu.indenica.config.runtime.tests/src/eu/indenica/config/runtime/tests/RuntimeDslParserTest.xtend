@@ -86,12 +86,12 @@ class RuntimeDslParserTest {
 				address "one"
 			}
 			
-			component sOne {
+			component SOne {
 				event EventOne
 				host hostOne
 			}
 			
-			component sTwo {
+			component STwo {
 				event EventOne
 				event EventTwo
 				action ActionOne
@@ -99,14 +99,14 @@ class RuntimeDslParserTest {
 			
 			query ruleOne {
 				emit EventThree(attr1 * 987 as attr3)
-				from source sOne, sTwo event EventOne as event1
+				from source SOne, STwo event EventOne as event1
 				window 10s
 				where -2 > attr1
 			}
 			
 			query ruleTwo {
-				from sources sOne, sTwo events EventTwo, EventOne
-				from source sTwo event EventTwo
+				from sources SOne, STwo events EventTwo, EventOne
+				from source STwo event EventTwo
 				emit EventThree(1234 * 2453 as attrThree)
 				window 500
 			}
@@ -118,7 +118,7 @@ class RuntimeDslParserTest {
 			
 			rule ruleOne {
 				from factOne
-				when EventThree.attr3 = 4 then sTwo ActionOne
+				when EventThree.attr3 = 4 then STwo ActionOne
 			}
 		'''
 	}

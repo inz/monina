@@ -42,7 +42,7 @@ ComponentElement:
 ;
 
 CodeElement:
-	Event | Action
+	Event | Action | Component
 ;
 
 CompositeElement:
