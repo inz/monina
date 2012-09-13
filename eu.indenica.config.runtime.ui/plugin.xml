@@ -190,14 +190,12 @@
         <persistent value="true"/>
     </extension>
 
-   <!--
    <extension
          point="org.eclipse.xtext.builder.participant">
       <participant
             class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.IXtextBuilderParticipant">
       </participant>
    </extension>
-   -->
    <extension
             point="org.eclipse.ui.preferencePages">
         <page
