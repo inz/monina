@@ -24,6 +24,7 @@ import com.google.inject.Binder;
 import com.google.inject.name.Names;
 
 import eu.indenica.config.runtime.generator.RuntimeGenerator;
+import eu.indenica.config.runtime.generator.RuntimeGeneratorCSharp;
 import eu.indenica.config.runtime.scoping.RuntimeDeclarativeScopeProvider;
 import eu.indenica.config.runtime.scoping.RuntimeXbaseScopeProvider;
 
@@ -110,6 +111,6 @@ public class RuntimeRuntimeModule extends
 	 */
 	@Override
 	public Class<? extends IGenerator> bindIGenerator() {
-		return RuntimeGenerator.class;
+		return RuntimeGeneratorCSharp.class;
 	}
 }
