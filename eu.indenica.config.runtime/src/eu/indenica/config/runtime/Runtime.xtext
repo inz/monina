@@ -69,8 +69,9 @@ EventRef:
 ;
 
 EmissionFrequency:
-	'every' (interval=DECIMAL unit=TimeUnit) | (frequency=DECIMAL 'Hz')
+	'every' (interval=Number unit=TimeUnit) | (frequency=Number 'Hz')
 ;
+
 
 Action:
 	'action' name=ID '{'
@@ -399,7 +400,8 @@ Literal returns ConditionalExpression:
 	BooleanLiteral |
 	NumberLiteral |
 	NullLiteral |
-	StringLiteral 
+	StringLiteral |
+	IvmlReference
 ;
 
 BooleanLiteral returns ConditionalExpression:
@@ -418,6 +420,14 @@ NullLiteral returns ConditionalExpression:
 
 StringLiteral returns ConditionalExpression:
 	{StringLiteral} value=STRING
+;
+
+IvmlReference returns ConditionalExpression:
+	{IvmlReference} '«' ref=IvmlQualifiedName '»'
+;
+
+IvmlQualifiedName:
+	ValidID ('::' ValidID)* ('.' ValidID)*
 ;
 
 //QualifiedName:
