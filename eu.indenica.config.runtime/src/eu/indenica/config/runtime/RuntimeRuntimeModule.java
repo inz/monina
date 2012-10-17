@@ -111,6 +111,6 @@ public class RuntimeRuntimeModule extends
 	 */
 	@Override
 	public Class<? extends IGenerator> bindIGenerator() {
-		return RuntimeGeneratorCSharp.class;
+		return RuntimeGenerator.class;
 	}
 }
