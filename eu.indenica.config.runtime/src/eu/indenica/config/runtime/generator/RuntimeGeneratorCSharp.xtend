@@ -52,7 +52,7 @@ class RuntimeGeneratorCSharp implements IGenerator {
 	
 	def compile(EventAttribute it) '''
 		[XmlElement(ElementName = "«name»")]
-		public «name.toFirstUpper» { get; set; }
+		public /* ADD Type («type») */ «name.toFirstUpper» { get; set; }
 	'''
 
 }
