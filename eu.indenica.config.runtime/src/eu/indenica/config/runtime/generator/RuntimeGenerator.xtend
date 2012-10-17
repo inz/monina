@@ -102,6 +102,7 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def dispatch body(Event it, ImportManager importManager) '''
+		@javax.xml.bind.annotation.XMLRootElement
 		public class «name.toFirstUpper» extends eu.indenica.events.Event {
 			«constructor»
 			«FOR a : attributes»
@@ -111,6 +112,7 @@ class RuntimeGenerator implements IGenerator {
 	'''
 
 	def dispatch body(Action it, ImportManager importManager) '''
+		@javax.xml.bind.annotation.XMLRootElement
 		public class «name.toFirstUpper» extends eu.indenica.adaptation.Action {
 			«constructor»
 			«FOR p : parameters»
