@@ -20,9 +20,7 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.xtext.xbase.lib,
  eu.indenica.config.runtime,
  org.eclipse.xtend.lib,
- com.google.guava,
- de.uni_hildesheim.sse.varModel;bundle-version="0.0.10",
- de.uni_hildesheim.sse.ivml;bundle-version="0.1.4"
+ com.google.guava
 Import-Package: org.apache.log4j,
  org.eclipse.xtext.xbase.lib
 Bundle-RequiredExecutionEnvironment: J2SE-1.5

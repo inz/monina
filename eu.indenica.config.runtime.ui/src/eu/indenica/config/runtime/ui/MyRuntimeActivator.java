@@ -5,9 +5,6 @@ package eu.indenica.config.runtime.ui;
 
 import org.osgi.framework.BundleContext;
 
-import de.uni_hildesheim.sse.EclipseResourceInitializer;
-import de.uni_hildesheim.sse.ModelUtility;
-
 import eu.indenica.config.runtime.ui.internal.RuntimeActivator;
 
 /**
@@ -21,6 +18,6 @@ public class MyRuntimeActivator extends RuntimeActivator {
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		ModelUtility.setResourceInitializer(new EclipseResourceInitializer(this));
+//		ModelUtility.setResourceInitializer(new EclipseResourceInitializer(this));
 	}
 }

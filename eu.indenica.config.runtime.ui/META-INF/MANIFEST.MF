@@ -16,8 +16,7 @@ Require-Bundle: eu.indenica.config.runtime;visibility:=reexport,
  org.antlr.runtime,
  org.eclipse.xtext.common.types.ui,
  org.eclipse.xtext.ui.codetemplates.ui,
- org.eclipse.compare,
- de.uni_hildesheim.sse.ivml;bundle-version="0.1.4"
+ org.eclipse.compare
 Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: eu.indenica.config.runtime.ui.contentassist,
