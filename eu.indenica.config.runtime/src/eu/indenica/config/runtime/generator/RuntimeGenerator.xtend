@@ -26,6 +26,7 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
+import eu.indenica.config.runtime.runtime.Endpoint
 
 class RuntimeGenerator implements IGenerator {
 	@Inject extension IQualifiedNameProvider
@@ -143,9 +144,21 @@ class RuntimeGenerator implements IGenerator {
 	def dispatch constructor(Action it) '''
 	'''
 	
+	def allElements(Component it) { 
+		elements + endpoints.map[elements].flatten
+	}
+	
+	def events(Component it) {
+		allElements.filter(typeof(EventRef)).map[e | e.event]
+	}
+	
+	def actions(Component it) {
+		allElements.filter(typeof(ActionRef)).map[a | a.action]
+	}
+	
 	def dispatch body(Component it, ImportManager importManager) '''
-		«val eventClasses = elements.filter(typeof(EventRef)).map[e | e.event].map[e | e.fullyQualifiedName.toString + ".class"]»
-		«val actionClasses = elements.filter(typeof(ActionRef)).map[a | a.action].map[e | e.fullyQualifiedName.toString + ".class"]»
+		«val eventClasses = events.map[e | e.fullyQualifiedName.toString + ".class"]»
+		«val actionClasses = actions.map[e | e.fullyQualifiedName.toString + ".class"]»
 		import eu.indenica.common.EventListener;
 		import eu.indenica.common.RuntimeComponent;
 		import eu.indenica.common.PubSub;
@@ -155,30 +168,24 @@ class RuntimeGenerator implements IGenerator {
 		import eu.indenica.integration.AdaptationInterface;
 		import eu.indenica.integration.EventReceiver;
 		
-		import org.osoa.sca.annotations.Reference;
-		import org.osoa.sca.annotations.Init;
-		import org.osoa.sca.annotations.Destroy;
-		
-		import javax.xml.bind.annotation.XmlSeeAlso;
-		
-		@XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
+		@javax.xml.bind.annotation.XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
 		public class «name» implements EventReceiver, EventListener, RuntimeComponent {
 			private PubSub pubSub = PubSubFactory.getPubSub();
 			
 			private AdaptationInterface adaptationInterface;
 			
-			@Reference
+			@org.osoa.sca.annotations.Reference
 			public void setAdaptationInterface(AdaptationInterface adaptationInterface) {
 				this.adaptationInterface = adaptationInterface;
 			}
 			
-			@Init
+			@org.osoa.sca.annotations.Init
 			public void init() {
 				pubSub.registerListener(this, null, "«name»_action");
 				adaptationInterface.registerCallback();
 			}
 			
-			@Destroy
+			@org.osoa.sca.annotations.Destroy
 			public void destroy() {
 				// Maybe de-register callback at component?
 			}
@@ -214,6 +221,7 @@ class RuntimeGenerator implements IGenerator {
 		import eu.indenica.adaptation.Action;
 		import eu.indenica.events.ActionEvent;
 		
+		@javax.xml.bind.annotation.XmlRootElement
 		public class «name»ActionEvent extends ActionEvent {
 			public «name»ActionEvent(final Action action) {
 				super(action);
@@ -288,16 +296,68 @@ class RuntimeGenerator implements IGenerator {
 	def componentDefinition(Component it) '''
 		<component name="«name»">
 			<implementation.java class="«fullyQualifiedName»" />
-			<service name="EventReceiver">
-				<interface.java interface="eu.indenica.integration.EventReceiver" />
-				<binding.ws />
-			</service>
-			<reference name="adaptationInterface">
-				<interface.java interface="eu.indenica.integration.AdaptationInterface" />
-				<binding.ws uri="«host.host.address.address + endpointAddress.endpointAddress»" />
-			</reference>
+			«FOR endpoint : endpoints»
+				«endpoint.monitoringReceiverDeclaration»
+				«endpoint.adaptationReferenceDeclaration»
+			«ENDFOR»
+«««			<service name="EventReceiver">
+«««				<interface.java interface="eu.indenica.integration.EventReceiver" />
+«««				<binding.ws />
+«««			</service>
+«««			<reference name="adaptationInterface">
+«««				<interface.java interface="eu.indenica.integration.AdaptationInterface" />
+«««				<binding.ws uri="«hostRef?.host.address.value»" />
+«««			</reference>
 		</component>
 	'''
+	
+	def monitoringReceiverDeclaration(Endpoint it) {
+		if(!isMonitoringEndpoint) { return "" }
+		'''
+			<service name="EventReceiver">
+					<interface.java interface="eu.indenica.integration.EventReceiver" />
+«««					TODO: Handle JMS/Rest/Web service bindings
+					<binding.ws />
+			</service>
+		'''
+	}
+
+	def adaptationReferenceDeclaration(Endpoint it) {
+		if(!isAdaptationEndpoint) { return "" }
+		var host = (eContainer as Component).hostRef.host
+		'''
+			<reference name="adaptationInterface">
+					<interface.java interface="eu.indenica.integration.AdaptationInterface" />
+					<binding.ws uri="«host.address.value»" />
+			</reference>
+		'''
+	}
+	
+	def isMonitoringEndpoint(Endpoint it) {
+		if(elements.filter(typeof(Event)).size > 0)
+		{ 
+			return true
+		}
+		if(elements.size == 0 && 
+			(eContainer as Component).elements.filter(typeof(Event)).size > 0
+		) {
+			return true
+		}
+		return false;
+	}
+	
+	def isAdaptationEndpoint(Endpoint it) {
+		if(elements.filter(typeof(Action)).size > 0)
+		{ 
+			return true
+		}
+		if(elements.size == 0 && 
+			(eContainer as Component).elements.filter(typeof(Action)).size > 0
+		) {
+			return true
+		}
+		return false;
+	}
 
 	def compileProperty(MonitoringQuery it) '''
 		<MonitoringQueryImpl xmlns="">
@@ -364,6 +424,7 @@ class RuntimeGenerator implements IGenerator {
     
     def compileClientComposite(Component it) '''
     	«compositeHeader(name + "_client")»
+«««    		Add Monitoring and Adaptation components/bindings
     		<component name="EventEmitter">
     			<implementation.java class="«name»EventReceiver" />
     			<reference name="monitoringInterface">
@@ -375,7 +436,7 @@ class RuntimeGenerator implements IGenerator {
     		<component name="ActionReceiver">
     			<implementation.java class="«name»ActionReceiver" />
     			<service name="AdaptationInterface">
-    				<binding.ws uri="«host.host.address.address + endpointAddress.endpointAddress»" />
+    				<binding.ws uri="«hostRef.host.address.value»" />
     			</service>
     		</component>
     	</composite>

@@ -31,8 +31,8 @@ Component:
 //			actions+=ActionRef |
 //			emits+=EventRef
 //		)*
-		host=HostRef?
-		endpointAddress=EndpointAddress?
+		hostRef=HostRef?
+		endpoints+=Endpoint*
 		generateClient?='generate client'?
 	'}'
 ;
@@ -90,6 +90,7 @@ EventAttribute:
 Host:
 	'host' name=ID '{'
 		address=HostAddress?
+		port=HostPort?
 		capacity=HostCapacity?
 	'}'
 ;
@@ -99,8 +100,12 @@ HostRef:
 ;
 
 HostAddress:
-	'address' address=STRING
+	'address' value=STRING
 //	fqdn=Fqdn | ipv4=IPV4_ADDRESS | ipv6=IPV6_ADDRESS
+;
+
+HostPort:
+	'port' port=INT
 ;
 
 //Fqdn:
@@ -150,9 +155,21 @@ HostCapacity:
 	'capacity' capacity=INT
 ;
 
-EndpointAddress:
-	'endpoint' endpointAddress=STRING
+Endpoint:
+	'endpoint' name=ID? '{'
+		'at' address=EndpointAddress
+		(elements+=ComponentElement)*
+	'}'
 ;
+
+EndpointAddress:
+	uri=STRING
+	('on' hostRef=HostRef)?
+	('port' port=INT)?
+	('using' protocol=STRING)?
+	('with' params=STRING)?
+;
+
 
 MonitoringQuery:
 	IndenicaMonitoringQuery | EsperMonitoringQuery
