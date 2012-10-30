@@ -27,14 +27,18 @@ import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
 import eu.indenica.config.runtime.runtime.Endpoint
+import eu.indenica.config.runtime.runtime.EndpointAddress
+import java.util.logging.Logger
 
 class RuntimeGenerator implements IGenerator {
+	private static Logger log = Logger::getLogger(typeof(RuntimeGenerator).canonicalName)
 	@Inject extension IQualifiedNameProvider
 	@Inject extension TypeReferenceSerializer
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
 		// Generate Java artifacts
 		for(e : resource.allContents.toIterable.filter(typeof(CodeElement))) {
+			log.info("Generating class for " + e.fullyQualifiedName)
 			fsa.generateFile(
 				e.fullyQualifiedName.toString("/") + ".java",
 				e.compile
@@ -42,12 +46,14 @@ class RuntimeGenerator implements IGenerator {
 		}
 		
 		for(e : resource.allContents.toIterable.filter(typeof(Component))) {
+			log.info("Generating files for " + e.fullyQualifiedName)
 			fsa.generateFile(
 				e.fullyQualifiedName.toString("/") + "ActionEvent.java",
 				e.compileActionEvent
 			)
 
 			if(e.generateClient) {
+				log.info("Generating client for " + e.name)
 				fsa.generateFile(
 					"clients/" + e.name + "/" + e.name + "EventEmitter.java",
 					e.compileClientEmitter
@@ -265,7 +271,8 @@ class RuntimeGenerator implements IGenerator {
 	def compileRuntimeComposite(
 		Iterable<MonitoringQuery> queries, Iterable<AdaptationRule> rules,
 		Iterable<Component> components
-	) '''					
+	) '''
+		«log.info("Creating runtime composite...")»
 		«compositeHeader("runtime")»
 			<component name="MonitoringEngine">
 				<implementation.java 
@@ -294,8 +301,10 @@ class RuntimeGenerator implements IGenerator {
 	'''
 	
 	def componentDefinition(Component it) '''
+		«log.info("Creating component definition for " + toString)»
 		<component name="«name»">
 			<implementation.java class="«fullyQualifiedName»" />
+			«log.info("Endpoints: " + endpoints.toString)»
 			«FOR endpoint : endpoints»
 				«endpoint.monitoringReceiverDeclaration»
 				«endpoint.adaptationReferenceDeclaration»
@@ -312,34 +321,99 @@ class RuntimeGenerator implements IGenerator {
 	'''
 	
 	def monitoringReceiverDeclaration(Endpoint it) {
-		if(!isMonitoringEndpoint) { return "" }
+		if(!isMonitoringEndpoint) {
+			log.finer(toString + " is no monitoring event receiver") 
+			return ""
+		}
+		log.info("Generating monitoring receiver for endpoint " + toString)
 		'''
 			<service name="EventReceiver">
-					<interface.java interface="eu.indenica.integration.EventReceiver" />
-«««					TODO: Handle JMS/Rest/Web service bindings
-					<binding.ws />
+«««				<interface.java interface="eu.indenica.integration.EventReceiver" />
+		''' + bindingDeclaration + '''
 			</service>
 		'''
 	}
 
 	def adaptationReferenceDeclaration(Endpoint it) {
-		if(!isAdaptationEndpoint) { return "" }
-		var host = (eContainer as Component).hostRef.host
-		'''
+		if(!isAdaptationEndpoint) { 
+			log.finer(toString + " is no adaptation reference")
+			return ""
+		}
+		log.info("Generating adaptation reference for endpoint " + toString)
+		'''				
 			<reference name="adaptationInterface">
-					<interface.java interface="eu.indenica.integration.AdaptationInterface" />
-					<binding.ws uri="«host.address.value»" />
+«««				<interface.java interface="eu.indenica.integration.AdaptationInterface" />
+		''' + bindingDeclaration +
+		'''
 			</reference>
 		'''
 	}
+
+	def String indent(String source, String indent) {
+		var result = new StringBuilder
+		for(String line : source.split("\\r?\\n"))
+			result.append(indent).append(source).append("\\n")
+		result.toString
+	}
+	
+	def bindingDeclaration(Endpoint it) {
+		switch(address.protocol) {
+			case "ws": wsBindingDeclaration 
+			case "rest": restBindingDeclaration
+			case "jms": jmsBindingDeclaration
+			default: {
+				address.port = 80
+				wsBindingDeclaration
+			}
+		}.toString.indent("    ")
+	}
+	
+	def wsBindingDeclaration(Endpoint it) '''
+		<binding.ws uri="http://«address.toURI»" />
+	'''
+	
+	def restBindingDeclaration(Endpoint it) '''
+		<!-- TODO: implement rest binding -->
+	'''
+	
+	def jmsBindingDeclaration(Endpoint it) '''
+		<binding.jms 
+			initialContextFactory="org.apache.activemq.jndi.ActiveMQInitialContextFactory"
+			jndiURL="«address.toJndiURI»"
+		>
+			<destination name="«address.uri»" />
+			<tuscany:wireformat.jmsTextXML />
+		</binding.jms>
+	'''
+	
+	def toURI(EndpointAddress it) {
+		var endpointHost = (
+			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
+		).host 
+		var result = endpointHost.address.value
+		var rPort = if(port != null) port else endpointHost.port?.port
+		if(rPort != null) result = result + ":" + rPort
+		result = result + uri
+		if(params != null) result = result + "?" + params
+		result
+	}
+	
+	def toJndiURI(EndpointAddress it) {
+		var endpointHost = (
+			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
+		).host
+		var result = endpointHost.address.value
+		var rPort = if(port != null) port else endpointHost.port?.port
+		if(rPort != null) result = result + ":" + rPort
+		result
+	}
 	
 	def isMonitoringEndpoint(Endpoint it) {
-		if(elements.filter(typeof(Event)).size > 0)
-		{ 
+		if(elements.filter(typeof(EventRef)).size > 0) { 
 			return true
 		}
 		if(elements.size == 0 && 
-			(eContainer as Component).elements.filter(typeof(Event)).size > 0
+			(eContainer as Component).elements.filter(typeof(EventRef)).size > 0
 		) {
 			return true
 		}
@@ -347,12 +421,11 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def isAdaptationEndpoint(Endpoint it) {
-		if(elements.filter(typeof(Action)).size > 0)
-		{ 
+		if(elements.filter(typeof(ActionRef)).size > 0) { 
 			return true
 		}
 		if(elements.size == 0 && 
-			(eContainer as Component).elements.filter(typeof(Action)).size > 0
+			(eContainer as Component).elements.filter(typeof(ActionRef)).size > 0
 		) {
 			return true
 		}
