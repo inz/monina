@@ -15,7 +15,7 @@ class EsperMonitoringQueryConverter {
 		
 	'''
 	def dispatch convert(EventEmissionDeclaration it) '''
-		transpose(new «event.name.toFirstUpper»
+		transpose(new «event.name.toFirstUpper»(/* attributes */))
 	'''
 
 }

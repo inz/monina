@@ -29,6 +29,7 @@ import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
 import eu.indenica.config.runtime.runtime.Endpoint
 import eu.indenica.config.runtime.runtime.EndpointAddress
 import java.util.logging.Logger
+import java.util.regex.Pattern
 
 class RuntimeGenerator implements IGenerator {
 	private static Logger log = Logger::getLogger(typeof(RuntimeGenerator).canonicalName)
@@ -348,11 +349,15 @@ class RuntimeGenerator implements IGenerator {
 			</reference>
 		'''
 	}
+	
+	def String indent(String source) {
+		indent(source, "	")
+	}
 
 	def String indent(String source, String indent) {
 		var result = new StringBuilder
-		for(String line : source.split("\\r?\\n"))
-			result.append(indent).append(source).append("\\n")
+		for(String line : Pattern::compile("^", Pattern::MULTILINE).split(source))
+			if(!line.empty) result.append(indent).append(line)
 		result.toString
 	}
 	
@@ -361,11 +366,8 @@ class RuntimeGenerator implements IGenerator {
 			case "ws": wsBindingDeclaration 
 			case "rest": restBindingDeclaration
 			case "jms": jmsBindingDeclaration
-			default: {
-				address.port = 80
-				wsBindingDeclaration
-			}
-		}.toString.indent("    ")
+			default: wsBindingDeclaration
+		}.toString.indent
 	}
 	
 	def wsBindingDeclaration(Endpoint it) '''
@@ -379,8 +381,7 @@ class RuntimeGenerator implements IGenerator {
 	def jmsBindingDeclaration(Endpoint it) '''
 		<binding.jms 
 			initialContextFactory="org.apache.activemq.jndi.ActiveMQInitialContextFactory"
-			jndiURL="«address.toJndiURI»"
-		>
+			jndiURL="«address.toJndiURI»">
 			<destination name="«address.uri»" />
 			<tuscany:wireformat.jmsTextXML />
 		</binding.jms>
@@ -391,8 +392,8 @@ class RuntimeGenerator implements IGenerator {
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host 
 		var result = endpointHost.address.value
-		var rPort = if(port != null) port else endpointHost.port?.port
-		if(rPort != null) result = result + ":" + rPort
+		var rPort = if(port != 0) port else endpointHost.port?.port
+		if(rPort != null && rPort != 0) result = result + ":" + rPort
 		result = result + uri
 		if(params != null) result = result + "?" + params
 		result
@@ -403,8 +404,9 @@ class RuntimeGenerator implements IGenerator {
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host
 		var result = endpointHost.address.value
-		var rPort = if(port != null) port else endpointHost.port?.port
-		if(rPort != null) result = result + ":" + rPort
+		var rPort = if(port != 0) port else endpointHost.port?.port
+		if(rPort == 0) rPort = 61616
+		if(rPort != null && rPort != 0) result = result + ":" + rPort
 		result
 	}
 	
@@ -457,7 +459,9 @@ class RuntimeGenerator implements IGenerator {
 		«ENDFOR»
 	'''
 	
-	def compileProperty(AdaptationRule rule) { }
+	def compileProperty(AdaptationRule it) '''
+		<!-- TODO (compileProperty) -->
+	'''
 
 
 	/**
