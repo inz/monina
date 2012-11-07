@@ -83,6 +83,12 @@ class RuntimeGenerator implements IGenerator {
 			"runtime.composite", 
 			compileRuntimeComposite(queries, rules, components)
 		)
+		
+		// Generate launcher pom.xml
+		fsa.generateFile(
+			"pom.xml",
+			compilePom
+		)
 	}
 	
 	/**
@@ -550,6 +556,63 @@ class RuntimeGenerator implements IGenerator {
 			public void registerCallback() {}
 		}
 	''' 
+	
+	def compilePom() '''
+		«var id=System::currentTimeMillis»
+		<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+			<modelVersion>4.0.0</modelVersion>
+		
+			<groupId>eu.indenica.runtime</groupId>
+			<artifactId>control-infrastructure-«id»</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<packaging>jar</packaging>
+		
+			<name>VSP Monitoring and Adaptation Infrastructure</name>
+		
+			«pomDependencies»
+			«pomRepositories»
+		</project>
+	'''
+	def pomDependencies() '''
+		<dependencies>
+			<dependency>
+				<groupId>eu.indenica.runtime</groupId>
+				<artifactId>core</artifactId>
+				<version>0.0.1-SNAPSHOT</version>
+			</dependency>
+		</dependency>
+	'''
+
+	
+	def pomRepositories() '''
+		<repositories>
+			<repository>
+				<id>maven-repo</id>
+				<name>maven-repo</name>
+				<url>http://repo2.maven.org/maven2</url>
+			</repository>
+			<repository>
+				<id>jboss-repo</id>
+				<name>jboss-repo</name>
+				<url>https://repository.jboss.org/nexus</url>
+			</repository>
+			<repository>
+				<id>indenica-tuv-snapshots</id>
+				<url>https://raw.github.com/indenicatuv/snapshots/master/</url>
+				<snapshots>
+					<enabled>true</enabled>
+				</snapshots>
+			</repository>
+			<repository>
+				<id>indenica-tuv-releases</id>
+				<url>https://raw.github.com/indenicatuv/releases/master/</url>
+				<snapshots>
+					<enabled>true</enabled>
+				</snapshots>
+			</repository>
+		</repositories>
+	'''
 
 	/**
 	 * Utility methods
