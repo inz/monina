@@ -48,7 +48,7 @@ public class DeployHandler extends AbstractHandler implements IHandler {
 			if(firstElement instanceof IFile) {
 				IFile file = (IFile) firstElement;
 				IProject project = file.getProject();
-				IFolder srcGenFolder = project.getFolder("src-gen");
+				IFolder srcGenFolder = project.getFolder("monina-gen");
 				if(!srcGenFolder.exists()) {
 					try {
 						srcGenFolder.create(true, true,

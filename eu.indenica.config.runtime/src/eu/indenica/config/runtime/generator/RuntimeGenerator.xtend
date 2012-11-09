@@ -30,6 +30,7 @@ import eu.indenica.config.runtime.runtime.Endpoint
 import eu.indenica.config.runtime.runtime.EndpointAddress
 import java.util.logging.Logger
 import java.util.regex.Pattern
+import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 
 class RuntimeGenerator implements IGenerator {
 	private static Logger log = Logger::getLogger(typeof(RuntimeGenerator).canonicalName)
@@ -37,11 +38,14 @@ class RuntimeGenerator implements IGenerator {
 	@Inject extension TypeReferenceSerializer
 	
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
+		val srcPrefix = "src/main/"
+		val javaPrefix = srcPrefix + "java/"
+		val resourcePrefix = srcPrefix + "resources/"
 		// Generate Java artifacts
 		for(e : resource.allContents.toIterable.filter(typeof(CodeElement))) {
 			log.info("Generating class for " + e.fullyQualifiedName)
-			fsa.generateFile(
-				e.fullyQualifiedName.toString("/") + ".java",
+			fsa.generateFile( 
+				javaPrefix + e.fullyQualifiedName.toString("/") + ".java",
 				e.compile
 			)
 		}
@@ -49,6 +53,7 @@ class RuntimeGenerator implements IGenerator {
 		for(e : resource.allContents.toIterable.filter(typeof(Component))) {
 			log.info("Generating files for " + e.fullyQualifiedName)
 			fsa.generateFile(
+				javaPrefix +
 				e.fullyQualifiedName.toString("/") + "ActionEvent.java",
 				e.compileActionEvent
 			)
@@ -80,9 +85,14 @@ class RuntimeGenerator implements IGenerator {
 		println("rules: " + rules.size)
 		val components = Lists::newArrayList(resource.allContents.toIterable.filter(typeof(Component)))
 		fsa.generateFile(
-			"runtime.composite", 
+			resourcePrefix + "runtime.composite", 
 			compileRuntimeComposite(queries, rules, components)
 		)
+		
+//		fsa.generateFile(
+//			javaPrefix + "eu/indenica/runtime/Launcher.java",
+//			compileLauncher
+//		)
 		
 		// Generate launcher pom.xml
 		fsa.generateFile(
@@ -116,7 +126,7 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def dispatch body(Event it, ImportManager importManager) '''
-		@javax.xml.bind.annotation.XMLRootElement
+		@javax.xml.bind.annotation.XmlRootElement
 		public class «name.toFirstUpper» extends eu.indenica.events.Event {
 			«constructor»
 			«FOR a : attributes»
@@ -126,7 +136,7 @@ class RuntimeGenerator implements IGenerator {
 	'''
 
 	def dispatch body(Action it, ImportManager importManager) '''
-		@javax.xml.bind.annotation.XMLRootElement
+		@javax.xml.bind.annotation.XmlRootElement
 		public class «name.toFirstUpper» extends eu.indenica.adaptation.Action {
 			«constructor»
 			«FOR p : parameters»
@@ -284,7 +294,7 @@ class RuntimeGenerator implements IGenerator {
 			<component name="MonitoringEngine">
 				<implementation.java 
 					class="eu.indenica.monitoring.esper.EsperMonitoringEngine" />
-				<property name="queries" many="true" type="eu.indenica.monitoring.MonitoringQueryImpl">
+				<property name="queries" many="true"  type="m:MonitoringQueryImpl">
 					«FOR query : queries»
 						«query.compileProperty»
 					«ENDFOR»
@@ -368,7 +378,7 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def bindingDeclaration(Endpoint it) {
-		switch(address.protocol) {
+		switch(address.protocol?.split("[+/]")?.head) {
 			case "ws": wsBindingDeclaration 
 			case "rest": restBindingDeclaration
 			case "jms": jmsBindingDeclaration
@@ -377,7 +387,7 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def wsBindingDeclaration(Endpoint it) '''
-		<binding.ws uri="http://«address.toURI»" />
+		<binding.ws uri="«address.toProtocol("http")»://«address.toURI»" />
 	'''
 	
 	def restBindingDeclaration(Endpoint it) '''
@@ -387,18 +397,27 @@ class RuntimeGenerator implements IGenerator {
 	def jmsBindingDeclaration(Endpoint it) '''
 		<binding.jms 
 			initialContextFactory="org.apache.activemq.jndi.ActiveMQInitialContextFactory"
-			jndiURL="«address.toJndiURI»">
+			jndiURL="«address.toProtocol("tcp")»://«address.toJndiURI»">
 			<destination name="«address.uri»" />
-			<tuscany:wireformat.jmsTextXML />
+			<tuscany:wireFormat.jmsTextXML />
 		</binding.jms>
 	'''
 	
+	def toProtocol(EndpointAddress it, String defaultProtocol) {
+		var result = defaultProtocol
+		val split = protocol?.split("[+/]") 
+		if(split != null && split.size > 1)
+			result = split.last
+		
+		result
+	}
+	
 	def toURI(EndpointAddress it) {
-		var endpointHost = (
+		val endpointHost = (
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host 
 		var result = endpointHost.address.value
-		var rPort = if(port != 0) port else endpointHost.port?.port
+		val rPort = if(port != 0) port else endpointHost.port?.port
 		if(rPort != null && rPort != 0) result = result + ":" + rPort
 		result = result + uri
 		if(params != null) result = result + "?" + params
@@ -406,12 +425,12 @@ class RuntimeGenerator implements IGenerator {
 	}
 	
 	def toJndiURI(EndpointAddress it) {
-		var endpointHost = (
+		val endpointHost = (
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host
 		var result = endpointHost.address.value
 		var rPort = if(port != 0) port else endpointHost.port?.port
-		if(rPort == 0) rPort = 61616
+		if(rPort == 0 && toProtocol('').equals('tcp')) rPort = 61616
 		if(rPort != null && rPort != 0) result = result + ":" + rPort
 		result
 	}
@@ -441,16 +460,20 @@ class RuntimeGenerator implements IGenerator {
 	}
 
 	def compileProperty(MonitoringQuery it) '''
+		«IF it instanceof IndenicaMonitoringQuery»
+		<!-- IndenicaMonitoringQuery support coming up -->
+		«ELSE»
 		<MonitoringQueryImpl xmlns="">
 			«propertyBody»
 		</MonitoringQueryImpl>
+		«ENDIF»
 	'''
 	
 	def propertyBody(MonitoringQuery it) '''
 		«inputEventTypes»
-		<statement>
+		<statement><![CDATA[
 			«new EsperMonitoringQueryConverter().convert(it)»
-		</statement>
+		]]></statement>
 	'''
 	
 	def dispatch inputEventTypes(IndenicaMonitoringQuery it) '''
@@ -555,7 +578,7 @@ class RuntimeGenerator implements IGenerator {
 			
 			public void registerCallback() {}
 		}
-	''' 
+	'''
 	
 	def compilePom() '''
 		«var id=System::currentTimeMillis»
@@ -569,19 +592,40 @@ class RuntimeGenerator implements IGenerator {
 			<packaging>jar</packaging>
 		
 			<name>VSP Monitoring and Adaptation Infrastructure</name>
+			
+			<properties>
+				<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+			</properties>
+			
 		
 			«pomDependencies»
+			«pomBuildPlugins»
 			«pomRepositories»
 		</project>
 	'''
 	def pomDependencies() '''
 		<dependencies>
 			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>1.7.2</version>
+			</dependency>
+			<dependency>
 				<groupId>eu.indenica.runtime</groupId>
 				<artifactId>core</artifactId>
 				<version>0.0.1-SNAPSHOT</version>
 			</dependency>
-		</dependency>
+			<dependency>
+				<groupId>org.apache.activemq</groupId>
+				<artifactId>activemq-core</artifactId>
+				<version>5.5.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.activemq</groupId>
+				<artifactId>activemq-optional</artifactId>
+				<version>5.5.1</version>
+			</dependency>
+		</dependencies>
 	'''
 
 	
@@ -613,6 +657,39 @@ class RuntimeGenerator implements IGenerator {
 			</repository>
 		</repositories>
 	'''
+		
+	def pomBuildPlugins() '''
+		<build>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>1.2.1</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>java</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<mainClass>eu.indenica.runtime.Launch</mainClass>
+						<!--
+						<arguments>
+							<argument>argument1</argument>
+						</arguments>
+						<systemProperties>
+							<systemProperty>
+								<key>myproperty</key>
+								<value>myvalue</value>
+							</systemProperty>
+						</systemProperties>
+						-->
+					</configuration>
+				</plugin>
+			</plugins>
+		</build>
+	'''
 
 	/**
 	 * Utility methods
@@ -623,10 +700,12 @@ class RuntimeGenerator implements IGenerator {
 		<?xml version="1.0" encoding="UTF-8"?>
 		«IF tuscanyVersion == 1»
 		<composite xmlns="http://www.osoa.org/xmlns/sca/1.0"
+				   xmlns:tuscany="http://tuscany.apache.org/xmlns/sca/1.0"
 		«ELSEIF tuscanyVersion == 2»
 		<composite xmlns="http://docs.oasis-open.org/ns/opencsa/sca/200912"
 		           xmlns:tuscany="http://tuscany.apache.org/xmlns/sca/1.1"
 		«ENDIF»
+				   xmlns:m="http://monitoring.indenica.eu"
 		           targetNamespace="http://indenica.eu"
 		           name="«compositeName.toFirstLower»-contribution">
 	'''

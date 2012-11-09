@@ -35,10 +35,14 @@
             </reference>
          </activeWhen>
       </handler>
-        <handler
+      <handler
               class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:eu.indenica.config.runtime.ui.handler.DeployHandler"
               commandId="eu.indenica.config.runtime.ui.deployment.deploy">
-        </handler>
+      </handler>
+      <handler
+              class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:eu.indenica.config.runtime.ui.handler.RunHandler"
+              commandId="eu.indenica.config.runtime.ui.deployment.run">
+      </handler>
     </extension>
     <extension point="org.eclipse.core.expressions.definitions">
         <definition id="eu.indenica.config.runtime.Runtime.Editor.opened">
@@ -108,9 +112,15 @@
       </category>
       <command
             categoryId="eu.indenica.config.runtime.ui.deployment"
-            description="Deploy current configuration"
+            description="Generate artifacts for current configuration"
             id="eu.indenica.config.runtime.ui.deployment.deploy"
-            name="Deploy">
+            name="Generate">
+      </command>
+      <command
+            categoryId="eu.indenica.config.runtime.ui.deployment"
+            description="Run current configuration"
+            id="eu.indenica.config.runtime.ui.deployment.run"
+            name="Run">
       </command>
     </extension>
     <extension point="org.eclipse.ui.menus">
@@ -190,12 +200,14 @@
         <persistent value="true"/>
     </extension>
 
+<!--// Disable builder participant. Only build on menu command.
    <extension
          point="org.eclipse.xtext.builder.participant">
       <participant
             class="eu.indenica.config.runtime.ui.RuntimeExecutableExtensionFactory:org.eclipse.xtext.builder.IXtextBuilderParticipant">
       </participant>
    </extension>
+-->
    <extension
             point="org.eclipse.ui.preferencePages">
         <page
@@ -447,7 +459,12 @@
               mnemonic="d">
            <command
                  commandId="eu.indenica.config.runtime.ui.deployment.deploy"
-                 label="Deploy"
+                 label="Generate Artifacts"
+                 style="push">
+           </command>
+           <command
+                 commandId="eu.indenica.config.runtime.ui.deployment.run"
+                 label="Run"
                  style="push">
            </command>
         </menu>
