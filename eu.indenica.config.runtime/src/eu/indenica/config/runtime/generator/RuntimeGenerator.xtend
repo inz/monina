@@ -10,6 +10,8 @@ import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.AdaptationRule
 import eu.indenica.config.runtime.runtime.CodeElement
 import eu.indenica.config.runtime.runtime.Component
+import eu.indenica.config.runtime.runtime.Endpoint
+import eu.indenica.config.runtime.runtime.EndpointAddress
 import eu.indenica.config.runtime.runtime.EsperMonitoringQuery
 import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
@@ -17,6 +19,8 @@ import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.Fact
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 import eu.indenica.config.runtime.runtime.MonitoringQuery
+import java.util.logging.Logger
+import java.util.regex.Pattern
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.common.types.TypesFactory
@@ -26,11 +30,8 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
-import eu.indenica.config.runtime.runtime.Endpoint
-import eu.indenica.config.runtime.runtime.EndpointAddress
-import java.util.logging.Logger
-import java.util.regex.Pattern
-import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
+
+import static eu.indenica.config.runtime.generator.RuntimeGenerator.*
 
 class RuntimeGenerator implements IGenerator {
 	private static Logger log = Logger::getLogger(typeof(RuntimeGenerator).canonicalName)
@@ -83,10 +84,11 @@ class RuntimeGenerator implements IGenerator {
 		println("queries: " + queries.size)
 		val rules = Lists::newArrayList(resource.allContents.toIterable.filter(typeof(AdaptationRule)))
 		println("rules: " + rules.size)
+		val facts = Lists::newArrayList(resource.allContents.toIterable.filter(typeof(Fact)))
 		val components = Lists::newArrayList(resource.allContents.toIterable.filter(typeof(Component)))
 		fsa.generateFile(
 			resourcePrefix + "runtime.composite", 
-			compileRuntimeComposite(queries, rules, components)
+			compileRuntimeComposite(queries, facts, rules, components)
 		)
 		
 //		fsa.generateFile(
@@ -286,7 +288,9 @@ class RuntimeGenerator implements IGenerator {
 	 * Runtime Composite
 	 */
 	def compileRuntimeComposite(
-		Iterable<MonitoringQuery> queries, Iterable<AdaptationRule> rules,
+		Iterable<MonitoringQuery> queries,
+		Iterable<Fact> facts, 
+		Iterable<AdaptationRule> rules,
 		Iterable<Component> components
 	) '''
 		«log.info("Creating runtime composite...")»
@@ -297,6 +301,16 @@ class RuntimeGenerator implements IGenerator {
 				<property name="queries" many="true"  type="m:MonitoringQueryImpl">
 					«FOR query : queries»
 						«query.compileProperty»
+					«ENDFOR»
+				</property>
+			</component>
+			
+			<component name="FactBase">
+				<implementation.java
+					class="eu.indenica.adaptation.FactBase" />
+				<property name="factrules" many="true" type="m:FactRuleImpl">
+					«FOR fact : facts»
+						«fact.compileProperty»
 					«ENDFOR»
 				</property>
 			</component>
@@ -316,7 +330,7 @@ class RuntimeGenerator implements IGenerator {
 			«ENDFOR»
 		</composite>
 	'''
-	
+		
 	def componentDefinition(Component it) '''
 		«log.info("Creating component definition for " + toString)»
 		<component name="«name»">
@@ -488,8 +502,13 @@ class RuntimeGenerator implements IGenerator {
 		«ENDFOR»
 	'''
 	
+	def compileProperty(Fact it) '''
+		<!-- TODO compileProperty(Fact)
+	'''
+
+	
 	def compileProperty(AdaptationRule it) '''
-		<!-- TODO (compileProperty) -->
+		<!-- TODO compileProperty(AdaptationRule) -->
 	'''
 
 
