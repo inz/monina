@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: eu.indenica.config.runtime.ui
-Bundle-Vendor: My Company
+Bundle-Vendor: Distributed Systems Group, Vienna UT
 Bundle-Version: 1.0.0.qualifier
 Bundle-SymbolicName: eu.indenica.config.runtime.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
