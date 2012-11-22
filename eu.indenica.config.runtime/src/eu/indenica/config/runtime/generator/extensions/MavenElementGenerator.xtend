@@ -77,9 +77,6 @@ class MavenElementGenerator {
 			<repository>
 				<id>indenica-tuv-releases</id>
 				<url>https://raw.github.com/indenicatuv/releases/master/</url>
-				<snapshots>
-					<enabled>true</enabled>
-				</snapshots>
 			</repository>
 		</repositories>
 	'''

@@ -18,7 +18,6 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 class RuntimeGenerator implements IGenerator {
 	private static Logger LOG = Logger::getLogger(typeof(RuntimeGenerator).canonicalName)
-	
 	@Inject extension IQualifiedNameProvider
 	@Inject extension CodeElementGenerator
 	@Inject extension ClientCodeGenerator
