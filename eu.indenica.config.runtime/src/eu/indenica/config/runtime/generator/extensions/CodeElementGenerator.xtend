@@ -128,6 +128,7 @@ class CodeElementGenerator {
 	
 	def compile(EventAttribute it, ImportManager importManager) '''
 		«val shortType = type.shortName(importManager)»
+		
 		private «shortType» «name»;
 		
 		public «shortType» get«name.toFirstUpper»() {
