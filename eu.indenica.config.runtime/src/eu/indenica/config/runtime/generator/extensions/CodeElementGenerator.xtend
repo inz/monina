@@ -52,6 +52,8 @@ class CodeElementGenerator {
 	def dispatch body(Event it, ImportManager importManager) '''
 		@javax.xml.bind.annotation.XmlRootElement
 		public class «name.toFirstUpper» extends eu.indenica.events.Event {
+			«addLogger»
+			
 			«constructor»
 			«FOR a : attributes»
 				«a.compile(importManager)»
@@ -62,6 +64,8 @@ class CodeElementGenerator {
 	def dispatch body(Action it, ImportManager importManager) '''
 		@javax.xml.bind.annotation.XmlRootElement
 		public class «name.toFirstUpper» extends eu.indenica.adaptation.Action {
+			«addLogger»
+			
 			«constructor»
 			«FOR p : parameters»
 				«p.compile(importManager)»
@@ -95,6 +99,7 @@ class CodeElementGenerator {
 		
 		@javax.xml.bind.annotation.XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
 		public class «name» implements EventReceiver, EventListener, RuntimeComponent {
+			«addLogger»
 			private PubSub pubSub = PubSubFactory.getPubSub();
 			
 			private AdaptationInterface adaptationInterface;
@@ -173,6 +178,7 @@ class CodeElementGenerator {
 		
 		@javax.xml.bind.annotation.XmlRootElement
 		public class «name»ActionEvent extends ActionEvent {
+			«addLogger»
 			public «name»ActionEvent(final Action action) {
 				super(action);
 				eventType = "«name»_action";
@@ -180,6 +186,9 @@ class CodeElementGenerator {
 		}
 	'''
 	
+	def addLogger() '''
+		private final static org.slf4j.Logger LOG = eu.indenica.common.LoggerFactory.getLogger();
+	'''
 	
 	def shortName(JvmTypeReference reference, ImportManager importManager) {
 		val result = new StringBuilderBasedAppendable(importManager)

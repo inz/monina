@@ -51,6 +51,11 @@ class MavenElementGenerator {
 				<artifactId>activemq-optional</artifactId>
 				<version>5.5.1</version>
 			</dependency>
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>1.0.6</version>
+			</dependency>
 		</dependencies>
 	'''
 
