@@ -30,5 +30,8 @@ class DroolsRuleConverter {
 		«FOR inputFact : sources.map[s | s.fact]»
 		import «inputFact.fullyQualifiedName»
 		«ENDFOR»
+		import eu.indenica.events.ActionEvent
+		
+		global eu.indenica.runtime.adaptation.AdaptationEngine publisher
 	'''
 }
