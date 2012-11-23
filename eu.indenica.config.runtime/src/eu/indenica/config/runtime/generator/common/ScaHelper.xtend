@@ -16,6 +16,7 @@ class ScaHelper {
 		           xmlns:tuscany="http://tuscany.apache.org/xmlns/sca/1.1"
 		«ENDIF»
 				   xmlns:m="http://monitoring.indenica.eu"
+				   xmlns:a="http://adaptation.indenica.eu"
 		           targetNamespace="http://indenica.eu"
 		           name="«compositeName.toFirstLower»-contribution">
 	'''
