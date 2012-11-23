@@ -63,16 +63,6 @@ class MavenElementGenerator {
 	def pomRepositories() '''
 		<repositories>
 			<repository>
-				<id>maven-repo</id>
-				<name>maven-repo</name>
-				<url>http://repo2.maven.org/maven2</url>
-			</repository>
-			<repository>
-				<id>jboss-repo</id>
-				<name>jboss-repo</name>
-				<url>https://repository.jboss.org/nexus</url>
-			</repository>
-			<repository>
 				<id>indenica-tuv-snapshots</id>
 				<url>https://raw.github.com/indenicatuv/snapshots/master/</url>
 				<snapshots>
@@ -82,6 +72,16 @@ class MavenElementGenerator {
 			<repository>
 				<id>indenica-tuv-releases</id>
 				<url>https://raw.github.com/indenicatuv/releases/master/</url>
+			</repository>
+			<repository>
+				<id>maven-repo</id>
+				<name>maven-repo</name>
+				<url>http://repo2.maven.org/maven2</url>
+			</repository>
+			<repository>
+				<id>jboss-repo</id>
+				<name>jboss-repo</name>
+				<url>https://repository.jboss.org/nexus</url>
 			</repository>
 		</repositories>
 	'''
