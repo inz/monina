@@ -2,6 +2,7 @@ package eu.indenica.config.runtime.generator.extensions
 
 import com.google.common.collect.Lists
 import com.google.inject.Inject
+import eu.indenica.config.runtime.generator.common.DroolsRuleConverter
 import eu.indenica.config.runtime.generator.common.EsperMonitoringQueryConverter
 import eu.indenica.config.runtime.generator.common.ScaHelper
 import eu.indenica.config.runtime.runtime.ActionRef
@@ -12,7 +13,6 @@ import eu.indenica.config.runtime.runtime.EndpointAddress
 import eu.indenica.config.runtime.runtime.EsperMonitoringQuery
 import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.Fact
-import eu.indenica.config.runtime.runtime.IndenicaAdaptationRule
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 import eu.indenica.config.runtime.runtime.MonitoringQuery
 import java.util.logging.Logger
@@ -20,12 +20,15 @@ import java.util.regex.Pattern
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 
+import static eu.indenica.config.runtime.generator.extensions.ScaCompositeGenerator.*
+
 class ScaCompositeGenerator {
 	private static Logger LOG = Logger::getLogger(typeof(ScaCompositeGenerator).canonicalName)
 	
 	@Inject extension IQualifiedNameProvider
 	@Inject extension ScaHelper
 	@Inject extension EsperMonitoringQueryConverter
+	@Inject extension DroolsRuleConverter
 	
 	def compileRuntimeComposite(Resource resource) {
 		LOG.info("Compiling runtime composite for " + resource.toString)
@@ -60,7 +63,7 @@ class ScaCompositeGenerator {
 			<component name="FactBase">
 				<implementation.java
 					class="eu.indenica.adaptation.EsperFactTransformer" />
-				<property name="factrules" many="true" type="m:FactRuleImpl">
+				<property name="factrules" many="true" type="a:FactRuleImpl">
 					«FOR fact : facts»
 						«fact.compileProperty»
 					«ENDFOR»
@@ -70,7 +73,7 @@ class ScaCompositeGenerator {
 			<component name="AdaptationEngine">
 				<implementation.java 
 					class="eu.indenica.adaptation.drools.DroolsAdaptationEngine" />
-				<property name="rules" many="true">
+				<property name="rules" many="true" type="a:AdaptationRuleImpl">
 					«FOR rule : rules»
 						«rule.compileProperty»
 					«ENDFOR»
@@ -135,17 +138,16 @@ class ScaCompositeGenerator {
 	'''
 	
 	def compileProperty(AdaptationRule it) '''
-		«IF it instanceof IndenicaAdaptationRule»
-		<!-- IndenicaAdaptationRule support coming up -->
-		«ELSE»
 		<AdaptationRuleImpl xmlns="">
 			«propertyBody»
 		</AdaptationRuleImpl>
-		«ENDIF»
 	'''
 	
 	def dispatch propertyBody(AdaptationRule it) '''
-		«inputEventTypes»
+«««		«inputEventTypes»
+		<statement><![CDATA[
+			«convert(it)»
+		]]></statement>
 	'''
 	
 		
