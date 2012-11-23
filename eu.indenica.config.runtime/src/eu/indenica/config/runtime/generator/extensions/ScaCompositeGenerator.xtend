@@ -2,7 +2,7 @@ package eu.indenica.config.runtime.generator.extensions
 
 import com.google.common.collect.Lists
 import com.google.inject.Inject
-import eu.indenica.config.runtime.generator.EsperMonitoringQueryConverter
+import eu.indenica.config.runtime.generator.common.EsperMonitoringQueryConverter
 import eu.indenica.config.runtime.generator.common.ScaHelper
 import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.AdaptationRule
@@ -25,6 +25,7 @@ class ScaCompositeGenerator {
 	
 	@Inject extension IQualifiedNameProvider
 	@Inject extension ScaHelper
+	@Inject extension EsperMonitoringQueryConverter
 	
 	def compileRuntimeComposite(Resource resource) {
 		LOG.info("Compiling runtime composite for " + resource.toString)
@@ -95,7 +96,7 @@ class ScaCompositeGenerator {
 	def dispatch propertyBody(MonitoringQuery it) '''
 		«inputEventTypes»
 		<statement><![CDATA[
-			«new EsperMonitoringQueryConverter().convert(it)»
+			«convert(it)»
 		]]></statement>
 	'''
 	

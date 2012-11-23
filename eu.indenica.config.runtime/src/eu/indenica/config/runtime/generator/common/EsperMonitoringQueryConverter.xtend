@@ -1,4 +1,4 @@
-package eu.indenica.config.runtime.generator
+package eu.indenica.config.runtime.generator.common
 
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery
 import eu.indenica.config.runtime.runtime.EsperMonitoringQuery
