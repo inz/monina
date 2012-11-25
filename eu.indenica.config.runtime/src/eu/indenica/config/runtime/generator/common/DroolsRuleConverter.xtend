@@ -34,6 +34,6 @@ class DroolsRuleConverter {
 		«ENDFOR»
 		import eu.indenica.events.ActionEvent
 		
-		global eu.indenica.runtime.adaptation.AdaptationEngine publisher
+		global eu.indenica.adaptation.AdaptationEngine publisher
 	'''
 }
