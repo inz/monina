@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 import static eu.indenica.config.runtime.generator.extensions.ScaCompositeGenerator.*
+import eu.indenica.config.runtime.generator.common.EsperFactRuleConverter
 
 class ScaCompositeGenerator {
 	private static Logger LOG = Logger::getLogger(typeof(ScaCompositeGenerator).canonicalName)
@@ -29,6 +30,7 @@ class ScaCompositeGenerator {
 	@Inject extension ScaHelper
 	@Inject extension EsperMonitoringQueryConverter
 	@Inject extension DroolsRuleConverter
+	@Inject extension EsperFactRuleConverter
 	
 	def compileRuntimeComposite(Resource resource) {
 		LOG.info("Compiling runtime composite for " + resource.toString)
@@ -53,7 +55,7 @@ class ScaCompositeGenerator {
 			<component name="MonitoringEngine">
 				<implementation.java 
 					class="eu.indenica.monitoring.esper.EsperMonitoringEngine" />
-				<property name="queries" many="true"  type="m:MonitoringQueryImpl">
+				<property name="queries" many="true" type="m:MonitoringQueryImpl">
 					«FOR query : queries»
 						«query.compileProperty»
 					«ENDFOR»
@@ -63,7 +65,7 @@ class ScaCompositeGenerator {
 			<component name="FactBase">
 				<implementation.java
 					class="eu.indenica.adaptation.EsperFactTransformer" />
-				<property name="factrules" many="true" type="a:FactRuleImpl">
+				<property name="factRules" many="true" type="a:FactRuleImpl">
 					«FOR fact : facts»
 						«fact.compileProperty»
 					«ENDFOR»
@@ -135,6 +137,9 @@ class ScaCompositeGenerator {
 
 	def dispatch propertyBody(Fact it) '''
 		«inputEventTypes»
+		<statement><![CDATA[
+			«convert(it)»
+		]]></statement>
 	'''
 	
 	def compileProperty(AdaptationRule it) '''
