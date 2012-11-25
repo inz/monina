@@ -36,7 +36,7 @@ public class DeployHandler extends AbstractHandler implements IHandler {
 	@Inject
 	private IResourceSetProvider resourceSetProvider;
 
-	@Override
+//	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		ISelection selection = HandlerUtil.getCurrentSelection(event);
 		

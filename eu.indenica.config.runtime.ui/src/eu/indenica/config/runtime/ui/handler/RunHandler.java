@@ -14,7 +14,6 @@ import org.eclipse.core.commands.IHandler;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -30,7 +29,7 @@ import org.eclipse.ui.handlers.HandlerUtil;
 public class RunHandler extends AbstractHandler implements IHandler {
 	ExecutorService consoles = Executors.newCachedThreadPool();
 
-	@Override
+//	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		ISelection selection = HandlerUtil.getCurrentSelection(event);
 
