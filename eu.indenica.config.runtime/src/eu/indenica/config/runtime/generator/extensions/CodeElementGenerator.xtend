@@ -15,6 +15,7 @@ import eu.indenica.config.runtime.generator.common.JvmTypeHelper
 import java.util.logging.Logger
 import eu.indenica.config.runtime.runtime.EventRef
 import eu.indenica.config.runtime.runtime.ActionRef
+import eu.indenica.config.runtime.runtime.Fact
 
 class CodeElementGenerator {
 	private static Logger LOG = Logger::getLogger(typeof(CodeElementGenerator).canonicalName)
@@ -58,6 +59,25 @@ class CodeElementGenerator {
 			«FOR a : attributes»
 				«a.compile(importManager)»
 			«ENDFOR»
+		}
+	'''
+	
+	def dispatch body(Fact it, ImportManager importManager) '''
+«««		TODO: make proper data class from Fact!
+		@javax.xml.bind.annotation.XmlRootElement
+		public class «name.toFirstUpper» extends eu.indenica.adaptation.Fact {
+			«addLogger»
+			
+			«constructor»
+			«var attributes = source.sources.head.events.head.attributes»
+			«FOR a : attributes»
+				«a.compile(importManager)»
+			«ENDFOR»
+			
+			@Override
+			public Object getPartitionKey() {
+				return get«partitionKey.key.name.toFirstUpper»();
+			}
 		}
 	'''
 
@@ -154,6 +174,9 @@ class CodeElementGenerator {
 	def dispatch constructor(Action it) '''
 	'''
 	
+	def dispatch constructor(Fact it) '''
+	'''
+	
 	
 	def CharSequence compileActionEvent(Component it) '''
 		«LOG.info("Compiling action event for " + toString)»
@@ -216,4 +239,5 @@ class CodeElementGenerator {
 	}
 	def dispatch name(Event it) { name }
 	def dispatch name(Action it) { name }
+	def dispatch name(Fact it) { name }
 }
