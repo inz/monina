@@ -28,9 +28,9 @@ class DroolsRuleConverter {
 		package «eContainer.fullyQualifiedName»
 		
 		«FOR inputFact : sources.map[s | s.fact]»
-		«IF eContainer.fullyQualifiedName != inputFact.eContainer.fullyQualifiedName»
-		import «inputFact.fullyQualifiedName»
-		«ENDIF»
+			«IF eContainer.fullyQualifiedName != inputFact.eContainer.fullyQualifiedName»
+				import «inputFact.fullyQualifiedName»
+			«ENDIF»
 		«ENDFOR»
 		import eu.indenica.events.ActionEvent
 		
