@@ -175,6 +175,9 @@ class CodeElementGenerator {
 	'''
 	
 	def dispatch constructor(Fact it) '''
+		public «name.toFirstUpper»() {
+			super("«fullyQualifiedName»");
+		}
 	'''
 	
 	
