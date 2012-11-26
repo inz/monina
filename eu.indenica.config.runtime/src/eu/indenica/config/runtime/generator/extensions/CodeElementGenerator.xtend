@@ -74,10 +74,12 @@ class CodeElementGenerator {
 				«a.compile(importManager)»
 			«ENDFOR»
 			
+			«IF partitionKey != null»
 			@Override
 			public Object getPartitionKey() {
 				return get«partitionKey.key.name.toFirstUpper»();
 			}
+			«ENDIF»
 		}
 	'''
 
