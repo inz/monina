@@ -83,6 +83,8 @@ class RuntimeGenerator implements IGenerator {
 			"pom.xml",
 			compilePom
 		)
+		
+		LOG.info("All done.")
 	}
 	
 
