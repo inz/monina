@@ -149,7 +149,7 @@ class ScaCompositeGenerator {
 	'''
 	
 	def dispatch propertyBody(AdaptationRule it) '''
-«««		«inputEventTypes»
+		«inputEventTypes»
 		<statement><![CDATA[
 			«convert(it)»
 		]]></statement>
