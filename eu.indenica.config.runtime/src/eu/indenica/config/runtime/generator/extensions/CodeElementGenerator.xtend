@@ -1,21 +1,23 @@
 package eu.indenica.config.runtime.generator.extensions
 
 import com.google.inject.Inject
+import eu.indenica.config.runtime.generator.common.JvmTypeHelper
 import eu.indenica.config.runtime.runtime.Action
+import eu.indenica.config.runtime.runtime.ActionRef
 import eu.indenica.config.runtime.runtime.CodeElement
 import eu.indenica.config.runtime.runtime.Component
 import eu.indenica.config.runtime.runtime.Event
 import eu.indenica.config.runtime.runtime.EventAttribute
+import eu.indenica.config.runtime.runtime.EventRef
+import eu.indenica.config.runtime.runtime.Fact
+import java.util.logging.Logger
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.xbase.compiler.ImportManager
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable
 import org.eclipse.xtext.xbase.compiler.TypeReferenceSerializer
-import eu.indenica.config.runtime.generator.common.JvmTypeHelper
-import java.util.logging.Logger
-import eu.indenica.config.runtime.runtime.EventRef
-import eu.indenica.config.runtime.runtime.ActionRef
-import eu.indenica.config.runtime.runtime.Fact
+
+import static eu.indenica.config.runtime.generator.extensions.CodeElementGenerator.*
 
 class CodeElementGenerator {
 	private static Logger LOG = Logger::getLogger(typeof(CodeElementGenerator).canonicalName)
@@ -59,6 +61,9 @@ class CodeElementGenerator {
 			«FOR a : attributes»
 				«a.compile(importManager)»
 			«ENDFOR»
+			
+			«toStringMethod»
+			«equalsMethod»
 		}
 	'''
 	
@@ -80,6 +85,9 @@ class CodeElementGenerator {
 				return get«partitionKey.key.name.toFirstUpper»();
 			}
 			«ENDIF»
+			
+			«toStringMethod»
+			«equalsMethod»
 		}
 	'''
 
@@ -92,6 +100,9 @@ class CodeElementGenerator {
 			«FOR p : parameters»
 				«p.compile(importManager)»
 			«ENDFOR»
+			
+			«toStringMethod»
+			«equalsMethod»
 		}
 	'''
 	
@@ -114,11 +125,14 @@ class CodeElementGenerator {
 		import eu.indenica.common.RuntimeComponent;
 		import eu.indenica.common.PubSub;
 		import eu.indenica.common.PubSubFactory;
+		import eu.indenica.adaptation.Action;
 		import eu.indenica.events.Event;
 		import eu.indenica.events.ActionEvent;
 		import eu.indenica.integration.AdaptationInterface;
 		import eu.indenica.integration.EventReceiver;
 		
+		@org.osoa.sca.annotations.Scope("COMPOSITE")
+		@org.osoa.sca.annotations.EagerInit
 		@javax.xml.bind.annotation.XmlSeeAlso({«(eventClasses + actionClasses).join(", ")»})
 		public class «name» implements EventReceiver, EventListener, RuntimeComponent {
 			«addLogger»
@@ -135,6 +149,7 @@ class CodeElementGenerator {
 			public void init() {
 				pubSub.registerListener(this, null, "«name»_action");
 				adaptationInterface.registerCallback();
+				LOG.info("Component {} started.", getClass().getName());
 			}
 			
 			@org.osoa.sca.annotations.Destroy
@@ -143,11 +158,17 @@ class CodeElementGenerator {
 			}
 			
 			public void eventReceived(RuntimeComponent source, Event event) {
-				adaptationInterface.performAction(((ActionEvent) event).getAction());
+				performAction(((ActionEvent)event).getAction());
+			}
+			
+			public void performAction(Action action) {
+				LOG.debug("Performing action {}", action);
+				adaptationInterface.performAction(action);
 			}
 			
 			// receiveEvent dispatch for all event types.
 			public void receiveEvent(Event event) {
+				LOG.debug("Got event {}", event);
 				pubSub.publish(this, event);
 			}
 		}
@@ -217,6 +238,23 @@ class CodeElementGenerator {
 	def addLogger() '''
 		private final static org.slf4j.Logger LOG = eu.indenica.common.LoggerFactory.getLogger();
 	'''
+	
+	def toStringMethod(CodeElement it) '''
+		public String toString() {
+			return new StringBuilder().append("#<«name» ")
+				«attributes.map[a | 
+					".append(\"" + a.name + ": \").append(get" + a.name.toFirstUpper + "())"].join(".append(\", \")")»
+				.append(">").toString();
+		}
+	'''
+	
+	def equalsMethod(CodeElement it) '''
+		// equals, hashCode coming up.
+	'''
+	
+	def dispatch attributes(Event it) { attributes }
+	def dispatch attributes(Action it) { parameters }
+	def dispatch attributes(Fact it) { source.sources.head.events.head.attributes }
 	
 	def shortName(JvmTypeReference reference, ImportManager importManager) {
 		val result = new StringBuilderBasedAppendable(importManager)
