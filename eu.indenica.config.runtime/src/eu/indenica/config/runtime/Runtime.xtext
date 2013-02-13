@@ -215,8 +215,8 @@ EventSourceDeclaration:
 ;
 
 EventSource:
-	('source' | 'sources') sources+=[EventSourceType | QualifiedName] 
-		(',' sources+=[EventSourceType | QualifiedName])*
+	(('source' | 'sources') sources+=[EventSourceType | QualifiedName] 
+		(',' sources+=[EventSourceType | QualifiedName])*)?
 	('event' | 'events') events+=[Event | QualifiedName] 
 		(',' events+=[Event | QualifiedName])*
 	('as' sourceName=ID)? 
