@@ -43,11 +43,6 @@ class MavenElementGenerator {
 			</dependency>
 			<dependency>
 				<groupId>org.apache.activemq</groupId>
-				<artifactId>activemq-core</artifactId>
-				<version>5.5.1</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.activemq</groupId>
 				<artifactId>activemq-optional</artifactId>
 				<version>5.5.1</version>
 			</dependency>
