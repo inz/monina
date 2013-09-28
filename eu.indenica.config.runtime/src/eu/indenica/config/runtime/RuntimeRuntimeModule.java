@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -15,8 +17,11 @@ import org.eclipse.xtext.generator.IGenerator;
 import org.eclipse.xtext.resource.containers.FlatResourceSetBasedAllContainersState;
 import org.eclipse.xtext.resource.containers.IAllContainersState;
 import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateProvider;
+import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.scoping.IScopeProvider;
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
+import org.eclipse.xtext.util.PolymorphicDispatcher.ErrorHandler;
+import org.eclipse.xtext.util.PolymorphicDispatcher.WarningErrorHandler;
 import org.eclipse.xtext.xbase.scoping.XbaseImportedNamespaceScopeProvider;
 
 import com.google.common.collect.Lists;
@@ -34,83 +39,129 @@ import eu.indenica.config.runtime.scoping.RuntimeXbaseScopeProvider;
  */
 @SuppressWarnings("restriction")
 public class RuntimeRuntimeModule extends
-		eu.indenica.config.runtime.AbstractRuntimeRuntimeModule {
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIScopeProvider
-	 * ()
-	 */
-	@Override
-	public Class<? extends IScopeProvider> bindIScopeProvider() {
-		return RuntimeXbaseScopeProvider.class;
-	}
+        eu.indenica.config.runtime.AbstractRuntimeRuntimeModule {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#
-	 * configureIScopeProviderDelegate(com.google.inject.Binder)
-	 */
-	@Override
-	public void configureIScopeProviderDelegate(Binder binder) {
-		// super.configureIScopeProviderDelegate(binder);
-		binder.bind(IScopeProvider.class)
-				.annotatedWith(
-						Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
-				.to(XbaseImportedNamespaceScopeProvider.class);
-		binder.bind(IScopeProvider.class)
-				.annotatedWith(
-						Names.named(RuntimeXbaseScopeProvider.NAMED_DELEGATE))
-				.to(RuntimeDeclarativeScopeProvider.class);
-	}
+    static {
+        Logger.getLogger("org.eclipse.xtext").setLevel(Level.INFO);
+        Logger.getLogger("eu.indenica").setLevel(Level.ALL);
+    }
 
-	/*
-	 * FIX bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=382555#c0
-	 */
-	public Class<? extends IAllContainersState.Provider>
-			bindIAllContainersState$Provider() {
-		return FixedResourceSetBasedAllContainersStateProvider.class;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIScopeProvider
+     * ()
+     */
+    // @Override
+    // public Class<? extends IScopeProvider> bindIScopeProvider() {
+    // return RuntimeXbaseScopeProvider.class;
+    // }
 
-	public static class FixedResourceSetBasedAllContainersStateProvider extends
-			ResourceSetBasedAllContainersStateProvider {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#
+     * configureIScopeProviderDelegate(com.google.inject.Binder)
+     */
+    @Override
+    public void configureIScopeProviderDelegate(Binder binder) {
+        // super.configureIScopeProviderDelegate(binder);
+        // binder.bind(IScopeProvider.class)
+        // .annotatedWith(
+        // Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+        // .to(XbaseImportedNamespaceScopeProvider.class);
+        // binder.bind(IScopeProvider.class)
+        // .annotatedWith(
+        // Names.named(RuntimeXbaseScopeProvider.NAMED_DELEGATE))
+        // .to(RuntimeDeclarativeScopeProvider.class);
 
-		@Override
-		protected IAllContainersState handleAdapterNotFound(
-				ResourceSet resourceSet) {
-			return new FixedFlatResourceSetBasedAllContainersState(resourceSet);
-		}
-	}
+        // binder.bind(IScopeProvider.class)
+        // .annotatedWith(
+        // Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+        // .to(RuntimeXbaseScopeProvider.class);
+        // binder.bind(IScopeProvider.class)
+        // .annotatedWith(
+        // Names.named(RuntimeXbaseScopeProvider.NAMED_DELEGATE))
+        // .to(RuntimeDeclarativeScopeProvider.class);
 
-	public static class FixedFlatResourceSetBasedAllContainersState extends
-			FlatResourceSetBasedAllContainersState {
+        binder.bind(IScopeProvider.class)
+                .annotatedWith(
+                        Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+                .to(RuntimeDeclarativeScopeProvider.class);
+        binder.bind(IScopeProvider.class)
+                .annotatedWith(
+                        Names.named(RuntimeDeclarativeScopeProvider.NAMED_DELEGATE))
+                .to(XbaseImportedNamespaceScopeProvider.class);
+    }
 
-		public FixedFlatResourceSetBasedAllContainersState(ResourceSet rs) {
-			super(rs);
-		}
+    /*
+     * FIX bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=382555#c0
+     */
+    public Class<? extends IAllContainersState.Provider>
+            bindIAllContainersState$Provider() {
+        return FixedResourceSetBasedAllContainersStateProvider.class;
+    }
 
-		public Collection<URI> getContainedURIs(String containerHandle) {
-			if(!getHandle().equals(containerHandle))
-				return Collections.emptySet();
-			ResourceSet resourceSet = getResourceSet();
-			List<URI> uris =
-					Lists.newArrayListWithCapacity(resourceSet.getResources()
-							.size());
-			URIConverter uriConverter = resourceSet.getURIConverter();
-			for(Resource r : resourceSet.getResources())
-				uris.add(uriConverter.normalize(r.getURI()));
-			return uris;
-		}
-	}
-	/* ENDFIX */
-	
-	/* (non-Javadoc)
-	 * @see eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIGenerator()
-	 */
-	@Override
-	public Class<? extends IGenerator> bindIGenerator() {
-		return RuntimeGenerator.class;
-	}
+    public static class FixedResourceSetBasedAllContainersStateProvider extends
+            ResourceSetBasedAllContainersStateProvider {
+
+        @Override
+        protected IAllContainersState handleAdapterNotFound(
+                ResourceSet resourceSet) {
+            return new FixedFlatResourceSetBasedAllContainersState(resourceSet);
+        }
+    }
+
+    public static class FixedFlatResourceSetBasedAllContainersState extends
+            FlatResourceSetBasedAllContainersState {
+
+        public FixedFlatResourceSetBasedAllContainersState(ResourceSet rs) {
+            super(rs);
+        }
+
+        public Collection<URI> getContainedURIs(String containerHandle) {
+            if(!getHandle().equals(containerHandle))
+                return Collections.emptySet();
+            ResourceSet resourceSet = getResourceSet();
+            List<URI> uris =
+                    Lists.newArrayListWithCapacity(resourceSet.getResources()
+                            .size());
+            URIConverter uriConverter = resourceSet.getURIConverter();
+            for(Resource r : resourceSet.getResources())
+                uris.add(uriConverter.normalize(r.getURI()));
+            return uris;
+        }
+    }
+
+    /* ENDFIX */
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#bindIGenerator()
+     */
+    @Override
+    public Class<? extends IGenerator> bindIGenerator() {
+        return RuntimeGenerator.class;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * eu.indenica.config.runtime.AbstractRuntimeRuntimeModule#configure(com
+     * .google.inject.Binder)
+     */
+    @Override
+    public void configure(Binder binder) {
+        super.configure(binder);
+        binder.bind(ErrorHandler.class)
+                .annotatedWith(
+                        Names.named(AbstractDeclarativeScopeProvider.NAMED_ERROR_HANDLER))
+                .toInstance(
+                        WarningErrorHandler.<IScope> get(Logger
+                                .getLogger("SCOPE.ERROR")));
+    }
 }

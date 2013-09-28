@@ -101,7 +101,7 @@ class ScaCompositeGenerator {
 	def dispatch propertyBody(MonitoringQuery it) '''
 		«inputEventTypes»
 		<statement><![CDATA[
-			«convert(it)»
+			«convertQuery(it)»
 		]]></statement>
 	'''
 	
@@ -151,7 +151,7 @@ class ScaCompositeGenerator {
 	def dispatch propertyBody(AdaptationRule it) '''
 		«inputEventTypes»
 		<statement><![CDATA[
-			«convert(it)»
+			«convertRule(it)»
 		]]></statement>
 	'''
 	

@@ -3,17 +3,49 @@
  */
 package eu.indenica.config.runtime.scoping;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.eclipse.emf.common.notify.Adapter;
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.scoping.IScope;
+import org.eclipse.xtext.scoping.IScopeProvider;
 import org.eclipse.xtext.scoping.Scopes;
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
 
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
+import de.uni_hildesheim.sse.ModelUtility;
+import de.uni_hildesheim.sse.ivml.Expression;
+import de.uni_hildesheim.sse.ivml.IvmlFactory;
+import de.uni_hildesheim.sse.ivml.VariableDeclarationPart;
+import de.uni_hildesheim.sse.ivml.impl.VariableDeclarationPartImpl;
+import de.uni_hildesheim.sse.model.varModel.IvmlDatatypeVisitor;
+import de.uni_hildesheim.sse.model.varModel.ModelElement;
+import de.uni_hildesheim.sse.model.varModel.ModelQuery;
+import de.uni_hildesheim.sse.model.varModel.ProgressObserver;
+import de.uni_hildesheim.sse.model.varModel.Project;
+import de.uni_hildesheim.sse.model.varModel.ProjectInfo;
+import de.uni_hildesheim.sse.model.varModel.VarModel;
+import de.uni_hildesheim.sse.model.varModel.VarModelException;
+import de.uni_hildesheim.sse.model.varModel.datatypes.QualifiedNameMode;
+import de.uni_hildesheim.sse.model.varModel.search.SearchContext;
+import de.uni_hildesheim.sse.model.varModel.search.SearchResult;
 import eu.indenica.config.runtime.runtime.AttributeEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
@@ -21,111 +53,195 @@ import eu.indenica.config.runtime.runtime.EventSource;
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration;
 import eu.indenica.config.runtime.runtime.Fact;
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
+import eu.indenica.config.runtime.runtime.IvmlVariableReference;
+import eu.indenica.config.runtime.runtime.RuntimeFactory;
+import eu.indenica.config.runtime.runtime.RuntimeModel;
 
 /**
  * This class contains custom scoping description.
  * 
- * see : http://www.eclipse.org/Xtext/documentation/latest/xtext.html#scoping on
- * how and when to use it
+ * see : http://www.eclipse.org/Xtext/documentation.html#scoping on how and when
+ * to use it
  * 
  */
 public class RuntimeDeclarativeScopeProvider extends
-		AbstractDeclarativeScopeProvider {
+        AbstractDeclarativeScopeProvider {
 
-	private final static Logger logger = Logger
-			.getLogger(RuntimeDeclarativeScopeProvider.class);
+    private final static Logger logger = Logger
+            .getLogger(RuntimeDeclarativeScopeProvider.class);
 
-	// IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref)
-	// {
-	// logger.info("event attributes: " +
-	// ctx.getEvent().getAttributes().toString());
-	// return Scopes.scopeFor(ctx.getEvent().getAttributes());
-	// }
+    public final static String NAMED_DELEGATE =
+            "eu.indenica.config.runtime.scoping.RuntimeDeclarativeScopeProvicer.delegate";
 
-	/**
-	 * Looks up valid event attributes for rename statements in event attribute
-	 * emit statement.
-	 * 
-	 * @param ctx
-	 *            the attribute emit statement
-	 * @param ref
-	 *            the reference to the event attribute
-	 * @return a scope containing all valid event attributes
-	 */
-	IScope scope_AttributeEmissionDeclaration_attribute(
-			final AttributeEmissionDeclaration ctx, final EReference ref) {
-		return Scopes.scopeFor(((EventEmissionDeclaration) ctx.eContainer())
-				.getEvent().getAttributes());
-	}
+    @Inject(optional = true)
+    @Named(NAMED_DELEGATE)
+    private IScopeProvider delegate;
 
-	/**
-	 * Looks up generally available event attributes within a monitoring rule
-	 * 
-	 * @param ctx
-	 *            the monitoring rule
-	 * @param ref
-	 * @return a scope containing all valid event attributes
-	 */
-	IScope scope_EventAttribute(final IndenicaMonitoringQuery ctx,
-			final EReference ref) {
-		Collection<EObject> elements = Lists.newArrayList();
-		Collection<EventSource> sources = Lists.newArrayList();
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.xtext.xbase.scoping.XtypeScopeProvider#getDelegate()
+     */
+    @Override
+    public IScopeProvider getDelegate() {
+        return delegate;
+    }
 
-		for(EventSourceDeclaration source : ctx.getSources())
-			sources.addAll(source.getSources());
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.eclipse.xtext.xbase.scoping.XtypeScopeProvider#setDelegate(org.eclipse
+     * .xtext.scoping.IScopeProvider)
+     */
+    @Override
+    public void setDelegate(IScopeProvider delegate) {
+        this.delegate = delegate;
+    }
 
-		for(EventSource source : sources) {
-			for(Event event : source.getEvents()) {
-				// elements.add(event);
-				elements.addAll(event.getAttributes());
-			}
-		}
-		if(logger.isInfoEnabled()) {
-			logger.info("Scope: ");
-			for(EObject o : elements)
-				logger.info("  " + o.toString());
-		}
-		return Scopes.scopeFor(elements);
-	}
+    protected IScope delegateGetScope(EObject context, EReference reference) {
+        if(delegate != null)
+            return super.delegateGetScope(context, reference);
+        return IScope.NULLSCOPE;
+    }
 
-	/**
-	 * Looks up event attributes available for partitioning in Fact rules
-	 * 
-	 */
-	IScope scope_EventAttribute(final Fact ctx, final EReference ref) {
-		Collection<EObject> elements = Lists.newArrayList();
-		Collection<EventSource> sources = Lists.newArrayList();
+    // IScope scope_EventAttribute(EventEmissionDeclaration ctx, EReference ref)
+    // {
+    // logger.info("event attributes: " +
+    // ctx.getEvent().getAttributes().toString());
+    // return Scopes.scopeFor(ctx.getEvent().getAttributes());
+    // }
 
-		sources.addAll(ctx.getSource().getSources());
+    /**
+     * Looks up valid event attributes for rename statements in event attribute
+     * emit statement.
+     * 
+     * @param ctx
+     *            the attribute emit statement
+     * @param ref
+     *            the reference to the event attribute
+     * @return a scope containing all valid event attributes
+     */
+    IScope scope_AttributeEmissionDeclaration_attribute(
+            final AttributeEmissionDeclaration ctx, final EReference ref) {
+        logger.debug("Getting scope for AttributeEmissionDeclaration, "
+                + "EventEmissionDecl: " + ctx.eContainer());
+        return Scopes.scopeFor(((EventEmissionDeclaration) ctx.eContainer())
+                .getEvent().getAttributes());
+    }
 
-		for(EventSource source : sources) {
-			for(Event event : source.getEvents()) {
-				elements.addAll(event.getAttributes());
-			}
-		}
-		if(logger.isInfoEnabled()) {
-			logger.info("Scope: ");
-			for(EObject o : elements)
-				logger.info("  " + o.toString());
-		}
-		return Scopes.scopeFor(elements);
-	}
+    /**
+     * Looks up generally available event attributes within a monitoring rule
+     * 
+     * @param ctx
+     *            the monitoring rule
+     * @param ref
+     * @return a scope containing all valid event attributes
+     */
+    IScope scope_EventAttribute(final IndenicaMonitoringQuery ctx,
+            final EReference ref) {
+        logger.debug("Getting scope for EventAttribute in query " + ctx);
+        Collection<EObject> elements = Lists.newArrayList();
+        Collection<EventSource> sources = Lists.newArrayList();
 
-	/**
-	 * Looks up event attributes available for partitioning in Fact rules
-	 * @throws VarModelException 
-	 * 
-	 */
-//	IScope scope_IvmlReference(final Fact ctx, final EReference ref) throws VarModelException {
-//		VarModel.INSTANCE.addLocation(new File("EASy/"), ProgressObserver.NO_OBSERVER);
-//		VarModel.INSTANCE.registerLoader(ModelUtility.INSTANCE, ProgressObserver.NO_OBSERVER);
-//		List<ProjectInfo> projectInfoList = VarModel.INSTANCE.getProjectInfo((Project) null);
-//		Project projectRootElement = VarModel.INSTANCE.load(projectInfoList.get(0));
-//		String namePrefix = "";
-//		ModelQuery.getElementsByNamePrefix(projectRootElement, namePrefix, 
-//				IvmlDatatypeVisitor.getInstance(QualifiedNameMode.QUALIFIED), 
-//				SearchContext.ID);
-//		
-//		return null;
-//	}
+        for(EventSourceDeclaration source : ctx.getSources())
+            sources.addAll(source.getSources());
+
+        for(EventSource source : sources) {
+            for(Event event : source.getEvents()) {
+                // elements.add(event);
+                elements.addAll(event.getAttributes());
+            }
+        }
+        // if(logger.isInfoEnabled()) {
+        // logger.info("Scope: ");
+        // for(EObject o : elements)
+        // logger.info("  " + o.toString());
+        // }
+        return Scopes.scopeFor(elements);
+    }
+
+    /**
+     * Looks up event attributes available for partitioning in Fact rules
+     * 
+     */
+    IScope scope_EventAttribute(final Fact ctx, final EReference ref) {
+        logger.debug("Getting scope vor EventAttribute in fact " + ctx);
+        Collection<EObject> elements = Lists.newArrayList();
+        Collection<EventSource> sources = Lists.newArrayList();
+
+        sources.addAll(ctx.getSource().getSources());
+
+        for(EventSource source : sources) {
+            for(Event event : source.getEvents()) {
+                elements.addAll(event.getAttributes());
+            }
+        }
+        // if(logger.isInfoEnabled()) {
+        // logger.info("Scope: ");
+        // for(EObject o : elements)
+        // logger.info("  " + o.toString());
+        // }
+        return Scopes.scopeFor(elements);
+    }
+
+    /**
+     * Looks up qualified names for IVML references
+     * 
+     * @throws VarModelException
+     * 
+     */
+    IScope scope_VariableDeclarationPart(final RuntimeModel ctx,
+            final EReference ref) throws VarModelException {
+        logger.warn("Getting scope for variable declaration in " + ctx);
+        VarModel.INSTANCE.addLocation(new File("EASy/"),
+                ProgressObserver.NO_OBSERVER);
+        VarModel.INSTANCE.registerLoader(ModelUtility.INSTANCE,
+                ProgressObserver.NO_OBSERVER);
+        logger.info("Models loaded. Projects: "
+                + VarModel.INSTANCE.getProjectsCount());
+        List<ProjectInfo> projectInfoList =
+                VarModel.INSTANCE.getProjectInfo(java.net.URI.create(""));
+        logger.info("Projects found: " + projectInfoList.size());
+        Project projectRootElement =
+                VarModel.INSTANCE.load(projectInfoList.get(0));
+        String namePrefix = "";
+        List<SearchResult> elements =
+                ModelQuery.getElementsByNamePrefix(projectRootElement,
+                        namePrefix, IvmlDatatypeVisitor
+                                .getInstance(QualifiedNameMode.QUALIFIED),
+                        SearchContext.ID);
+        logger.info("Found: " + elements.toString());
+
+        Collection<EObject> result = Lists.newArrayList();
+        URI stubsUri = URI.createURI("file:/tmp/dummy-stubs.xmi");
+        Resource stubsResource =
+                ctx.eResource().getResourceSet().getResource(stubsUri, false);
+        if(stubsResource == null) {
+            stubsResource =
+                    ctx.eResource().getResourceSet().createResource(stubsUri);
+        }
+
+        for(SearchResult r : elements) {
+            // logger.trace("Found: " + r.getMatchedName() + ", "
+            // + r.getElement().getClass());
+            if(r.getElement() instanceof ModelElement) {
+                ModelElement mElement = (ModelElement) r.getElement();
+                // For now, just create VariableDeclarationPart -- might be
+                // necessary to clean up later.
+                VariableDeclarationPart element =
+                        IvmlFactory.eINSTANCE.createVariableDeclarationPart();
+                element.setName(mElement.getName());
+                stubsResource.getContents().add(element);
+                result.add(element);
+            }
+        }
+        return Scopes.scopeFor(result);
+    }
+
+    IScope scope_IvmlReference(final IndenicaMonitoringQuery ctx,
+            final EReference ref) {
+        logger.info("Getting scope for " + ctx);
+        return null;
+    }
 }

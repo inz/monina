@@ -3,6 +3,8 @@ grammar eu.indenica.config.runtime.Runtime with org.eclipse.xtext.xbase.Xbase
 
 
 generate runtime "http://www.indenica.eu/config/runtime/Runtime"
+
+import "http://www.uni_hildesheim.de/sse/Ivml" as ivml
  
 RuntimeModel:
  (elements+=AbstractElement)*
@@ -418,7 +420,7 @@ Literal returns ConditionalExpression:
 	NumberLiteral |
 	NullLiteral |
 	StringLiteral |
-	IvmlReference
+	IvmlLiteral
 ;
 
 BooleanLiteral returns ConditionalExpression:
@@ -439,8 +441,16 @@ StringLiteral returns ConditionalExpression:
 	{StringLiteral} value=STRING
 ;
 
-IvmlReference returns ConditionalExpression:
-	{IvmlReference} '«' ref=IvmlQualifiedName '»'
+IvmlLiteral returns ConditionalExpression:
+	{IvmlLiteral} 'ivml' ref=IvmlVariableReference
+;
+
+IvmlVariableReference returns ConditionalExpression:
+	{IvmlVariableReference} ref=[ivml::VariableDeclarationPart | IvmlQualifiedName]
+;
+
+IvmlExprListReference returns ConditionalExpression:
+	{IvmlExprListReference} ref=[ivml::ExpressionListEntry | IvmlQualifiedName]
 ;
 
 IvmlQualifiedName:
