@@ -3,24 +3,19 @@
  */
 package eu.indenica.config.runtime.scoping;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.eclipse.emf.common.notify.Adapter;
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.scoping.IScopeProvider;
 import org.eclipse.xtext.scoping.Scopes;
@@ -30,22 +25,12 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import de.uni_hildesheim.sse.ModelUtility;
-import de.uni_hildesheim.sse.ivml.Expression;
+import de.uni_hildesheim.sse.integration.common.IModelInfo;
+import de.uni_hildesheim.sse.integration.common.ModelException;
+import de.uni_hildesheim.sse.integration.tuv.IModel;
+import de.uni_hildesheim.sse.integration.tuv.IModelAccess;
 import de.uni_hildesheim.sse.ivml.IvmlFactory;
 import de.uni_hildesheim.sse.ivml.VariableDeclarationPart;
-import de.uni_hildesheim.sse.ivml.impl.VariableDeclarationPartImpl;
-import de.uni_hildesheim.sse.model.varModel.IvmlDatatypeVisitor;
-import de.uni_hildesheim.sse.model.varModel.ModelElement;
-import de.uni_hildesheim.sse.model.varModel.ModelQuery;
-import de.uni_hildesheim.sse.model.varModel.ProgressObserver;
-import de.uni_hildesheim.sse.model.varModel.Project;
-import de.uni_hildesheim.sse.model.varModel.ProjectInfo;
-import de.uni_hildesheim.sse.model.varModel.VarModel;
-import de.uni_hildesheim.sse.model.varModel.VarModelException;
-import de.uni_hildesheim.sse.model.varModel.datatypes.QualifiedNameMode;
-import de.uni_hildesheim.sse.model.varModel.search.SearchContext;
-import de.uni_hildesheim.sse.model.varModel.search.SearchResult;
 import eu.indenica.config.runtime.runtime.AttributeEmissionDeclaration;
 import eu.indenica.config.runtime.runtime.Event;
 import eu.indenica.config.runtime.runtime.EventEmissionDeclaration;
@@ -53,8 +38,6 @@ import eu.indenica.config.runtime.runtime.EventSource;
 import eu.indenica.config.runtime.runtime.EventSourceDeclaration;
 import eu.indenica.config.runtime.runtime.Fact;
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
-import eu.indenica.config.runtime.runtime.IvmlVariableReference;
-import eu.indenica.config.runtime.runtime.RuntimeFactory;
 import eu.indenica.config.runtime.runtime.RuntimeModel;
 
 /**
@@ -188,32 +171,62 @@ public class RuntimeDeclarativeScopeProvider extends
     /**
      * Looks up qualified names for IVML references
      * 
-     * @throws VarModelException
-     * 
+     * @throws ModelException
+     *             if parsing IVML failed.
      */
     IScope scope_VariableDeclarationPart(final RuntimeModel ctx,
-            final EReference ref) throws VarModelException {
-        logger.warn("Getting scope for variable declaration in " + ctx);
-        VarModel.INSTANCE.addLocation(new File("EASy/"),
-                ProgressObserver.NO_OBSERVER);
-        VarModel.INSTANCE.registerLoader(ModelUtility.INSTANCE,
-                ProgressObserver.NO_OBSERVER);
-        logger.info("Models loaded. Projects: "
-                + VarModel.INSTANCE.getProjectsCount());
-        List<ProjectInfo> projectInfoList =
-                VarModel.INSTANCE.getProjectInfo(java.net.URI.create(""));
-        logger.info("Projects found: " + projectInfoList.size());
-        Project projectRootElement =
-                VarModel.INSTANCE.load(projectInfoList.get(0));
-        String namePrefix = "";
-        List<SearchResult> elements =
-                ModelQuery.getElementsByNamePrefix(projectRootElement,
-                        namePrefix, IvmlDatatypeVisitor
-                                .getInstance(QualifiedNameMode.QUALIFIED),
-                        SearchContext.ID);
-        logger.info("Found: " + elements.toString());
+            final EReference ref) throws ModelException {
+        try {
+            Collection<EObject> result = Lists.newArrayList();
 
-        Collection<EObject> result = Lists.newArrayList();
+            Resource stubsResource = createStubsResource(ctx);
+
+            logger.debug("Getting scope for variable declaration in " + ctx);
+            IModelAccess modelAccess = IModelAccess.getInstance();
+            IProject project =
+                    ResourcesPlugin
+                            .getWorkspace()
+                            .getRoot()
+                            .getFile(
+                                    new Path(ctx.eResource().getURI()
+                                            .toPlatformString(true)))
+                            .getProject();
+            List<IModelInfo> availableModels =
+                    modelAccess.getAvailableModels(project);
+
+            logger.info("Projects found: " + availableModels.size());
+            for(IModelInfo modelInfo : availableModels) {
+                IModel model = modelAccess.obtainModel(modelInfo);
+                logger.info("Found: " + model.getVariablesCount()
+                        + " variables.");
+
+                for(int i = 0; i < model.getVariablesCount(); i++) {
+                    VariableDeclarationPart element =
+                            IvmlFactory.eINSTANCE
+                                    .createVariableDeclarationPart();
+                    element.setName(model.getName() + "::"
+                            + model.getVariable(i).getName());
+                    stubsResource.getContents().add(element);
+                    result.add(element);
+                }
+            }
+            return Scopes.scopeFor(result);
+        } catch(ModelException e) {
+            logger.error("Failed to get models!", e);
+        } catch(Exception e) {
+            logger.error("Something went wrong!", e);
+        }
+        return null;
+    }
+
+    /**
+     * Create/use a stub resource to hold the IVML variables found in the model.
+     * 
+     * @param ctx
+     *            the {@link RuntimeModel} to create the stubs resource in
+     * @return the stubs {@link Resource}
+     */
+    private Resource createStubsResource(final RuntimeModel ctx) {
         URI stubsUri = URI.createURI("file:/tmp/dummy-stubs.xmi");
         Resource stubsResource =
                 ctx.eResource().getResourceSet().getResource(stubsUri, false);
@@ -221,27 +234,6 @@ public class RuntimeDeclarativeScopeProvider extends
             stubsResource =
                     ctx.eResource().getResourceSet().createResource(stubsUri);
         }
-
-        for(SearchResult r : elements) {
-            // logger.trace("Found: " + r.getMatchedName() + ", "
-            // + r.getElement().getClass());
-            if(r.getElement() instanceof ModelElement) {
-                ModelElement mElement = (ModelElement) r.getElement();
-                // For now, just create VariableDeclarationPart -- might be
-                // necessary to clean up later.
-                VariableDeclarationPart element =
-                        IvmlFactory.eINSTANCE.createVariableDeclarationPart();
-                element.setName(mElement.getName());
-                stubsResource.getContents().add(element);
-                result.add(element);
-            }
-        }
-        return Scopes.scopeFor(result);
-    }
-
-    IScope scope_IvmlReference(final IndenicaMonitoringQuery ctx,
-            final EReference ref) {
-        logger.info("Getting scope for " + ctx);
-        return null;
+        return stubsResource;
     }
 }

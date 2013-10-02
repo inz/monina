@@ -445,11 +445,11 @@ IvmlLiteral returns ConditionalExpression:
 	{IvmlLiteral} 'ivml' ref=IvmlVariableReference
 ;
 
-IvmlVariableReference returns ConditionalExpression:
+IvmlVariableReference:
 	{IvmlVariableReference} ref=[ivml::VariableDeclarationPart | IvmlQualifiedName]
 ;
 
-IvmlExprListReference returns ConditionalExpression:
+IvmlExprListReference:
 	{IvmlExprListReference} ref=[ivml::ExpressionListEntry | IvmlQualifiedName]
 ;
 

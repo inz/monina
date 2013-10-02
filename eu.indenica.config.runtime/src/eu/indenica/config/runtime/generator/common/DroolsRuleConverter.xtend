@@ -1,24 +1,32 @@
 package eu.indenica.config.runtime.generator.common
 
 import com.google.inject.Inject
-import eu.indenica.config.runtime.runtime.AdaptationRule
-import eu.indenica.config.runtime.runtime.BinaryExpression
-import eu.indenica.config.runtime.runtime.DroolsAdaptationRule
-import eu.indenica.config.runtime.runtime.IndenicaAdaptationRule
-import org.eclipse.xtext.naming.IQualifiedNameProvider
-import eu.indenica.config.runtime.runtime.UnaryExpression
-import eu.indenica.config.runtime.runtime.BooleanLiteral
-import eu.indenica.config.runtime.runtime.NumberLiteral
-import eu.indenica.config.runtime.runtime.NullLiteral
-import eu.indenica.config.runtime.runtime.StringLiteral
-import eu.indenica.config.runtime.runtime.FeatureCall
-import eu.indenica.config.runtime.runtime.Operator
-import eu.indenica.config.runtime.runtime.EqualityOperator
-import eu.indenica.config.runtime.runtime.AdaptationStatement
 import eu.indenica.config.runtime.runtime.ActionExpression
+import eu.indenica.config.runtime.runtime.AdaptationRule
+import eu.indenica.config.runtime.runtime.AdaptationStatement
+import eu.indenica.config.runtime.runtime.BinaryExpression
+import eu.indenica.config.runtime.runtime.BooleanLiteral
+import eu.indenica.config.runtime.runtime.DroolsAdaptationRule
+import eu.indenica.config.runtime.runtime.EqualityOperator
+import eu.indenica.config.runtime.runtime.FeatureCall
+import eu.indenica.config.runtime.runtime.IndenicaAdaptationRule
+import eu.indenica.config.runtime.runtime.NullLiteral
+import eu.indenica.config.runtime.runtime.NumberLiteral
+import eu.indenica.config.runtime.runtime.Operator
+import eu.indenica.config.runtime.runtime.StringLiteral
+import eu.indenica.config.runtime.runtime.UnaryExpression
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import eu.indenica.config.runtime.runtime.IvmlLiteral
+import org.apache.log4j.Logger
+import de.uni_hildesheim.sse.integration.tuv.IModelAccess
+import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.runtime.Path
+import org.eclipse.core.resources.IProject
 
 class DroolsRuleConverter {
 	@Inject extension IQualifiedNameProvider
+	
+	private static Logger logger = Logger::getLogger(typeof(DroolsRuleConverter))
 	
 	def dispatch convertRule(IndenicaAdaptationRule it) '''
 		«ruleHead»
@@ -81,10 +89,43 @@ class DroolsRuleConverter {
 	def dispatch convert(NumberLiteral it) { value }
 	def dispatch convert(NullLiteral it) { "null" }
 	def dispatch convert(StringLiteral it) { value }
-//	def dispatch convert(IvmlReference it) {
-//		// TODO: resolve ivml reference!
-//		ref
-//	}
+	def dispatch convert(IvmlLiteral it) {
+		logger.debug("Getting value for IVML varaible...")
+		val modelAccess = IModelAccess::instance
+		val resourcePath = new Path(eResource.URI.toPlatformString(true))
+		val project = ResourcesPlugin::workspace.root.getFile(resourcePath).project
+		val availableModels = modelAccess.getAvailableModels(project)
+		logger.debug("Projects found: " + availableModels.size)
+		val varNameSplit = ref.ref.name.split("::")
+		if(varNameSplit.size != 2) {
+			logger.error("Variable name is not qualified: " + ref.ref.name)
+			throw new RuntimeException("Variable name not qualified: " + ref.ref.name)
+		}
+		val modelName = varNameSplit.get(0)
+		val varName = varNameSplit.get(1)
+		logger.debug("Searching for " + varName + " in " + modelName + ".")
+		val modelInfo = availableModels.findFirst[modelInfo |
+			modelInfo.name == modelName
+		]
+		if(modelInfo == null) {
+			logger.error("Could not find model " + modelName)
+			throw new RuntimeException("Could not find model " + modelName)
+		}
+		
+		val model = modelAccess.obtainModel(modelInfo)
+		if(model == null) {
+			logger.error("Could not retrieve model " + modelName)
+			throw new RuntimeException("Could not retrieve model " + modelName)
+		}
+		
+		val variable = model.getVariable(varName)
+		if(variable == null) {
+			logger.error("Could not retrieve variable " + varName);
+			throw new RuntimeException("Cloud not retrieve variable " + varName)
+		}
+		
+		variable.value
+	}
 	
 	/* Action Expression */
 	def dispatch convert(ActionExpression it) '''
