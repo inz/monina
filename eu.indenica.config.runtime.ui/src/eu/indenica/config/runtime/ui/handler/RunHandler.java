@@ -107,6 +107,9 @@ public class RunHandler extends AbstractHandler implements IHandler {
 			final String consoleName) {
 		final IOConsole console = findConsole(consoleName);
 
+		if(consoles.isShutdown())
+		    consoles = Executors.newCachedThreadPool();
+		
 		// process stdin
 		consoles.submit(new Callable<Void>() {
 			@Override
