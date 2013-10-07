@@ -19,9 +19,9 @@ Require-Bundle: eu.indenica.config.runtime;visibility:=reexport,
  org.eclipse.compare,
  org.eclipse.ui.console;bundle-version="3.5.100"
 Import-Package: org.apache.log4j
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: eu.indenica.config.runtime.ui.contentassist,
  eu.indenica.config.runtime.ui.contentassist.antlr,
  eu.indenica.config.runtime.ui.internal,
  eu.indenica.config.runtime.ui.quickfix
 Bundle-Activator: eu.indenica.config.runtime.ui.internal.RuntimeActivator
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
