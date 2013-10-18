@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/eu.indenica.config.runtime.feature_0.0.0.jar" id="eu.indenica.config.runtime.feature" version="0.0.0">
+      <category name="monina"/>
+   </feature>
+   <category-def name="monina" label="Monina"/>
+</site>

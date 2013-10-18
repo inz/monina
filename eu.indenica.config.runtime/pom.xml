@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>eu.indenica.config.runtime</groupId>
+		<artifactId>eu.indenica.config.runtime.parent</artifactId>
+		<version>0.1.0-SNAPSHOT</version>
+		<relativePath>../eu.indenica.config.runtime.parent/pom.xml</relativePath>
+	</parent>
+
+	<artifactId>eu.indenica.config.runtime</artifactId>
+	<version>0.1.0.qualifier</version>
+	<packaging>eclipse-plugin</packaging>
+	<build>
+		<!-- Include all xtext files from the src directory for mwe2 -->
+		<resources>
+			<resource>
+				<directory>src</directory>
+				<includes>
+					<include>**/*.xtext</include>
+				</includes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.fornax.toolsupport</groupId>
+				<artifactId>fornax-oaw-m2-plugin</artifactId>
+				<configuration>
+					<workflowDescriptor>${basedir}/src/eu/indenica/config/runtime/GenerateRuntime.mwe2</workflowDescriptor>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.xtend</groupId>
+				<artifactId>xtend-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

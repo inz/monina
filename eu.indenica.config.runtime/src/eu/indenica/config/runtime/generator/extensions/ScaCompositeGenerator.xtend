@@ -256,8 +256,10 @@ class ScaCompositeGenerator {
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host 
 		var result = endpointHost.address.value
-		val rPort = if(port != 0) port else endpointHost.port?.port
-		if(rPort != null && rPort != 0) result = result + ":" + rPort
+		var rPort = 0
+		if(port != 0) rPort = port 
+		if(endpointHost.port != null) rPort = endpointHost.port.port
+		if(rPort != 0) result = result + ":" + rPort
 		result = result + uri
 		if(params != null) result = result + "?" + params
 		result
@@ -268,9 +270,11 @@ class ScaCompositeGenerator {
 			if(hostRef != null) hostRef else (eContainer.eContainer as Component).hostRef
 		).host
 		var result = endpointHost.address.value
-		var rPort = if(port != 0) port else endpointHost.port?.port
+		var rPort = 0
+		if(port != 0) rPort = port
+		if(rPort == 0 && endpointHost.port != null) rPort = endpointHost.port.port
 		if(rPort == 0 && toProtocol('').equals('tcp')) rPort = 61616
-		if(rPort != null && rPort != 0) result = result + ":" + rPort
+		if(rPort != 0) result = result + ":" + rPort
 		result
 	}
 	

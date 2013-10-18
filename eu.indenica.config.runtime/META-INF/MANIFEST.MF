@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: eu.indenica.config.runtime
 Bundle-Vendor: Distributed Systems Group, Vienna UT
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.1.0.qualifier
 Bundle-SymbolicName: eu.indenica.config.runtime; singleton:=true
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext;visibility:=reexport;bundle-version="2.3.1",
@@ -18,7 +18,6 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport;bundle-version="2.3.1",
  org.antlr.runtime,
  org.eclipse.xtext.common.types,
  org.eclipse.xtext.xbase.lib,
- eu.indenica.config.runtime,
  org.eclipse.xtend.lib,
  org.eclipse.ui,
  org.eclipse.ui.ide,
@@ -27,8 +26,8 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport;bundle-version="2.3.1",
  com.google.guava,
  de.uni_hildesheim.sse.ivml,
  de.uni_hildesheim.sse.integration.common,
- de.uni_hildesheim.sse.integration.tuv,
- de.uni_hildesheim.sse.reasoning.drools
+ de.uni_hildesheim.sse.integration.tuv
+X-Comment: de.uni_hildesheim.sse.reasoning.drools
 Import-Package: org.apache.log4j,
  org.eclipse.xtext.xbase.lib
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

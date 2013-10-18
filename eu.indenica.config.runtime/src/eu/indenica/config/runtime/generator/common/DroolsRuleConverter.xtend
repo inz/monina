@@ -59,37 +59,37 @@ class DroolsRuleConverter {
 		global eu.indenica.adaptation.AdaptationEngine engine
 	'''
 	
-	def dispatch convert(AdaptationStatement it) '''
+	def dispatch String convert(AdaptationStatement it) '''
 		when «convert(conditon)» then «convert(action)»
 	'''
 	
-	def dispatch convert(BinaryExpression it) '''
+	def dispatch String convert(BinaryExpression it) '''
 		«convert(leftOperand)» «convert(operator)» «convert(rightOperand)»
 	'''
 	
-	def dispatch convert(UnaryExpression it) '''
+	def dispatch String convert(UnaryExpression it) '''
 		«convert(operator)»«convert(operand)»
 	'''
 	
 	/* Operators */
-	def dispatch convert(EqualityOperator it) { 
+	def dispatch String convert(EqualityOperator it) { 
 		if(operator == "=") "==" else "!="
 	}
 	// TODO: convert to correct drools representation!
 	// see http://docs.jboss.org/drools/release/5.2.0.Final/drools-expert-docs/html/ch05.html#d0e2785
-	def dispatch convert(Operator it) { operator }
+	def dispatch String convert(Operator it) { operator }
 	
 	/* Primary Expressions */
 	
-	def dispatch convert(FeatureCall it) { attribute.name }
+	def dispatch String convert(FeatureCall it) { attribute.name }
 	
 	/* Literals  */
 	
-	def dispatch convert(BooleanLiteral it) { if(isTrue) "true" else "false" }
-	def dispatch convert(NumberLiteral it) { value }
-	def dispatch convert(NullLiteral it) { "null" }
-	def dispatch convert(StringLiteral it) { value }
-	def dispatch convert(IvmlLiteral it) {
+	def dispatch String convert(BooleanLiteral it) { if(isTrue) "true" else "false" }
+	def dispatch String convert(NumberLiteral it) { value }
+	def dispatch String convert(NullLiteral it) { "null" }
+	def dispatch String convert(StringLiteral it) { value }
+	def dispatch String convert(IvmlLiteral it) {
 		logger.debug("Getting value for IVML varaible...")
 		val modelAccess = IModelAccess::instance
 		val resourcePath = new Path(eResource.URI.toPlatformString(true))
@@ -128,7 +128,7 @@ class DroolsRuleConverter {
 	}
 	
 	/* Action Expression */
-	def dispatch convert(ActionExpression it) '''
+	def dispatch String convert(ActionExpression it) '''
 		//TODO: convert action expression!
 	'''
 }

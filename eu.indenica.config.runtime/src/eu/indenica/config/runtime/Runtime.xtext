@@ -7,11 +7,13 @@ generate runtime "http://www.indenica.eu/config/runtime/Runtime"
 import "http://www.uni_hildesheim.de/sse/Ivml" as ivml
  
 RuntimeModel:
- (elements+=AbstractElement)*
+  importSection=XImportSection?
+  elements+=AbstractElement*
 ;
  
 AbstractElement:
-  Import | Event | Action | Component | MonitoringQuery |
+  // Import | 
+  Event | Action | Component | MonitoringQuery |
   Fact | Host | AdaptationRule | PackageDeclaration
 ;
 
@@ -21,9 +23,10 @@ PackageDeclaration:
 	'}'
 ;
 
-Import:
-	'import' importedNamespace=QualifiedNameWithWildcard
-;
+//Import:
+//	//'import' importedNamespace=QualifiedNameWithWildcard
+//  importSection=XImportSection
+//;
 
 Component:
 	'component' name=ID '{'
@@ -449,19 +452,25 @@ IvmlVariableReference:
 	{IvmlVariableReference} ref=[ivml::VariableDeclarationPart | IvmlQualifiedName]
 ;
 
-IvmlExprListReference:
-	{IvmlExprListReference} ref=[ivml::ExpressionListEntry | IvmlQualifiedName]
-;
+//IvmlExprListReference:
+//	{IvmlExprListReference} ref=[ivml::ExpressionListEntry | IvmlQualifiedName]
+//;
 
 IvmlQualifiedName:
-	ValidID ('::' ValidID)* ('.' ValidID)*
+	ValidID ('::' ValidID)* (=>'.' ValidID)*
 ;
 
 //QualifiedName:
-//	ID ('.' ID)*
+//  ValidID ('.' ValidID)*
+//;
+//
+//QualifiedNameWithWildcard:
+//	QualifiedName (=>'.*')?	
 //;
 
-QualifiedNameWithWildcard:
-	QualifiedName '.*'?	
-;
+Number hidden():
+	HEX | (INT | DECIMAL) ('.' (INT | DECIMAL))?;
 
+ValidID:
+	ID
+;

@@ -1,0 +1,12 @@
+instructions.configure=\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:0,location:http${#58}//download.eclipse.org/tools/orbit/downloads/drops/R20110523182458/repository);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//download.eclipse.org/tools/orbit/downloads/drops/R20110523182458/repository);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:0,location:http${#58}//download.eclipse.org/technology/swtbot/helios/dev-build/update-site);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//download.eclipse.org/technology/swtbot/helios/dev-build/update-site);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:0,location:http${#58}//update.eclemma.org/);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//update.eclemma.org/);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:0,location:http${#58}//download.eclipse.org/modeling/tmf/xtext/updates/composite/releases/);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//download.eclipse.org/modeling/tmf/xtext/updates/composite/releases/);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:0,location:http${#58}//www.xpect-tests.org/updatesite/nightly/);\
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//www.xpect-tests.org/updatesite/nightly/);
+org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(type:1,location:http${#58}//projects.sse.uni-hildesheim.de/easy/);
