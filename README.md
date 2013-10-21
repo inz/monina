@@ -1,7 +1,7 @@
 Monina -- A language for Monitoring, Integration and Adaptation
 ===============================================================
 
-[![Build Status](https://travis-ci.org/inz/monina.png)](https://travis-ci.org/inz/monina)
+[![Build Status](https://travis-ci.org/inz/monina.png?branch=master)](https://travis-ci.org/inz/monina)
 
 _description coming soon_
 
