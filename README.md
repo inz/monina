@@ -1,6 +1,8 @@
 Monina -- A language for Monitoring, Integration and Adaptation
 ===============================================================
 
+[![Build Status](https://travis-ci.org/inz/monina.png)](https://travis-ci.org/inz/monina)
+
 _description coming soon_
 
 In the meantime, you can get the paper at http://dsg.tuwien.ac.at/staff/inzinger/bibliography/Inzinger_2012wg.html
