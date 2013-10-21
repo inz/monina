@@ -1,0 +1,2 @@
+language: java
+script: mvn --file eu.indenica.config.runtime.parent/pom.xml clean install test
