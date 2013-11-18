@@ -52,6 +52,16 @@ public class RunHandler extends AbstractHandler implements IHandler {
 						try {
 							process =
 									new ProcessBuilder(
+											"mvn versions:use-latest-releases -Dincludes=eu.indenica.runtime:core"
+													.split(" "))
+											.directory(
+													srcGenFolder.getLocation()
+															.toFile()).start();
+
+							redirectToConsole(process, "Indenica Runtime");
+							process.waitFor();
+							process =
+									new ProcessBuilder(
 											"mvn clean compile exec:java"
 													.split(" "))
 											.directory(
