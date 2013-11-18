@@ -39,7 +39,7 @@ class MavenElementGenerator {
 			<dependency>
 				<groupId>eu.indenica.runtime</groupId>
 				<artifactId>core</artifactId>
-				<version>0.0.1-SNAPSHOT</version>
+				<version>0.1.2</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.activemq</groupId>

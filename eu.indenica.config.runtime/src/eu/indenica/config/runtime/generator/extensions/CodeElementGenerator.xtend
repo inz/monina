@@ -139,6 +139,7 @@ class CodeElementGenerator {
 			private PubSub pubSub = PubSubFactory.getPubSub();
 			
 			private AdaptationInterface adaptationInterface;
+			private String hostName;
 			
 			@org.osoa.sca.annotations.Reference
 			public void setAdaptationInterface(AdaptationInterface adaptationInterface) {
@@ -147,7 +148,7 @@ class CodeElementGenerator {
 			
 			@org.osoa.sca.annotations.Init
 			public void init() {
-				pubSub.registerListener(this, null, "«name»_action");
+				pubSub.registerListener(this, "«name»"", "«name»_action");
 				adaptationInterface.registerCallback();
 				LOG.info("Component {} started.", getClass().getName());
 			}
@@ -157,7 +158,7 @@ class CodeElementGenerator {
 				// Maybe de-register callback at component?
 			}
 			
-			public void eventReceived(RuntimeComponent source, Event event) {
+			public void eventReceived(String source, Event event) {
 				performAction(((ActionEvent)event).getAction());
 			}
 			
@@ -169,7 +170,11 @@ class CodeElementGenerator {
 			// receiveEvent dispatch for all event types.
 			public void receiveEvent(Event event) {
 				LOG.debug("Got event {}", event);
-				pubSub.publish(this, event);
+				pubSub.publish("«name»", event);
+			}
+			
+			public void setHostName(String hostName) {
+				this.hostName = hostName;
 			}
 		}
 	'''
