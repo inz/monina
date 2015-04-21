@@ -6,6 +6,8 @@ import eu.indenica.config.runtime.runtime.AbstractElement;
 import eu.indenica.config.runtime.runtime.IndenicaMonitoringQuery;
 import eu.indenica.config.runtime.runtime.MonitoringQuery;
 import eu.indenica.config.runtime.runtime.RuntimePackage;
+import eu.indenica.config.runtime.runtime.UpcaseNamedElement;
+import eu.indenica.config.runtime.services.RuntimeGrammarAccess.PackageDeclarationElements;
 
 public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 
@@ -35,6 +37,9 @@ public class RuntimeJavaValidator extends AbstractRuntimeJavaValidator {
 
 	@Check
 	public void checkElementNameStartsWithCapital(AbstractElement element) {
+		if(!(element instanceof UpcaseNamedElement)) {
+			return;
+		}
 		if (!Character.isUpperCase(element.getName().charAt(0))) {
 			error("Name must start with a capital",
 					RuntimePackage.Literals.ABSTRACT_ELEMENT__NAME);

@@ -11,10 +11,14 @@ RuntimeModel:
   elements+=AbstractElement*
 ;
  
-AbstractElement:
+AbstractElement returns AbstractElement:
   // Import | 
   Event | Action | Component | MonitoringQuery |
   Fact | Host | AdaptationRule | PackageDeclaration
+;
+
+UpcaseNamedElement returns UpcaseNamedElement:
+	Event | Action | Component
 ;
 
 PackageDeclaration:
