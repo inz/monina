@@ -14,6 +14,8 @@
 	<modules>
 		<module>../eu.indenica.config.runtime</module>
 		<module>../eu.indenica.config.runtime.ui</module>
+		<module>../eu.indenica.config.runtime.feature</module>
+		<module>../eu.indenica.config.runtime.updatesite</module>
 	</modules>
 
 	<properties>
